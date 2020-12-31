@@ -1,4 +1,3 @@
 # OpenCV-study-group2
-## 2020-12-29
-1. 깃허브 연습
-2. OpenCV라이브러리 설치
+## 대주제 : 영상처리와 컴퓨터 비전
+### [Wiki](https://github.com/minho0315/OpenCV-study-group2/wiki)
