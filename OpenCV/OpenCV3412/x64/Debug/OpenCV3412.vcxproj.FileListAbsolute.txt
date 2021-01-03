@@ -1,0 +1,2 @@
+C:\Users\Administrator\source\study\OpenCV3412\x64\Debug\OpenCV3412.exe
+C:\Users\Administrator\source\study\OpenCV3412\x64\Debug\OpenCV3412.pdb
