@@ -1,3 +1,371 @@
+//// 라벨링 (키보드 자판만 정확히 세기. 사이즈 옵션) - 2021/1/20
+//#include<opencv2/core.hpp>
+//#include<opencv2/imgproc.hpp>
+//#include<opencv2/highgui.hpp>
+//using namespace cv;
+//using namespace std;
+//int main()
+//{
+//	Mat image = imread("../Image/Keyboard.png");
+//
+//	//그레이 이미지
+//	Mat image_gray;
+//	cvtColor(image, image_gray, CV_RGB2GRAY);
+//
+//	//이진화
+//	Mat image_bi;
+//	threshold(image_gray, image_bi, 100, 255, THRESH_BINARY_INV);
+//
+//
+//	// 복사
+//	Mat label_box = image.clone();
+//
+//	// 라벨 레이어 변수
+//	Mat img_label, stats, centroids;
+//
+//	// 라벨링
+//	int label = connectedComponentsWithStats(image_bi, img_label, stats, centroids, 8, CV_32S);
+//	// 1. 입력 이미지 / 2. 라벨링 결과 이미지 / 3. 라벨링 된 이미지의 정보 / 4. 라벨링 된 이미지의 중심 좌표 /  5. 4방향 or 8방향 /  6. 타입
+//
+//
+//
+//
+//	int num = 1; // labeling 숫자
+//	// 레이블링 결과에 사각형 그리고, 넘버 표시하기
+//	for (int j = 1; j < label; j++) {
+//		int area = stats.at<int>(j, CC_STAT_AREA);
+//		int left = stats.at<int>(j, CC_STAT_LEFT);
+//		int top = stats.at<int>(j, CC_STAT_TOP);
+//		int width = stats.at<int>(j, CC_STAT_WIDTH);
+//		int height = stats.at<int>(j, CC_STAT_HEIGHT);
+//
+//		if (area > 25000) { //라벨링 면적 확인
+//
+//			rectangle(label_box, Point(left, top), Point(left + width, top + height),
+//				Scalar(0, 0, 255), 1);
+//
+//			putText(label_box, to_string(num++), Point(left + 20, top + 20), FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 0, 0), 1);
+//		}
+//	}
+//
+//
+//	imshow("original", image);
+//	imshow("Binary", image_bi);
+//	imshow("Label box", label_box);
+//
+//	waitKey(0);
+//}
+
+//// 원근 변환 - 2021/1/17
+//#include "iostream"
+//#include "opencv2/imgproc.hpp"
+//#include "opencv2/imgcodecs.hpp"
+//#include "opencv2/highgui.hpp"
+//
+//using namespace std;
+//using namespace cv;
+//
+//int main(int argc, char** argv)
+//{
+//    Mat src = imread("../Image/cloud.jpg");
+//
+//    Point2f srcTri[4];
+//    srcTri[0] = Point2f(0.f, 0.f);
+//    srcTri[1] = Point2f(src.cols - 1.f, 0.f);
+//    srcTri[2] = Point2f(0.f, src.rows - 1.f);
+//    srcTri[3] = Point2f(src.cols - 1.f, src.rows - 1.f);
+//
+//    Point2f dstTri[4];
+//    dstTri[0] = Point2f(0.f, src.rows * 0.33f);
+//    dstTri[1] = Point2f(src.cols * 0.85f, src.rows * 0.25f);
+//    dstTri[2] = Point2f(src.cols * 0.15f, src.rows * 0.7f);
+//    dstTri[3] = Point2f(src.cols * 0.85f, src.rows * 0.7f);
+//
+//    Mat warp_mat = getPerspectiveTransform(srcTri, dstTri);
+//    Mat dst = Mat::zeros(src.rows, src.cols, src.type());
+//    warpPerspective(src, dst, warp_mat, dst.size());
+//
+//    imshow("src", src);
+//    imshow("dst", dst);
+//
+//    waitKey(0);
+//
+//    return 0;
+//}
+
+//// 아핀변환 - - 2021/1/17
+//#include "iostream"
+//#include "opencv2/imgproc.hpp"
+//#include "opencv2/imgcodecs.hpp"
+//#include "opencv2/highgui.hpp"
+//
+//using namespace std;
+//using namespace cv;
+//
+//int main()
+//{
+//    Mat src = imread("../Image/cloud.jpg");
+//
+//    Point2f srcTri[3];
+//    srcTri[0] = Point2f(0.f, 0.f);
+//    srcTri[1] = Point2f(src.cols - 1.f, 0.f);
+//    srcTri[2] = Point2f(0.f, src.rows - 1.f);
+//
+//    Point2f dstTri[3];
+//    dstTri[0] = Point2f(0.f, src.rows * 0.33f);
+//    dstTri[1] = Point2f(src.cols * 0.85f, src.rows * 0.25f);
+//    dstTri[2] = Point2f(src.cols * 0.15f, src.rows * 0.7f);
+//
+//    Mat warp_mat = getAffineTransform(srcTri, dstTri);
+//    Mat dst = Mat::zeros(src.rows, src.cols, src.type());
+//    warpAffine(src, dst, warp_mat, dst.size());
+//
+//    imshow("src", src);
+//    imshow("dst", dst);
+//
+//    waitKey(0);
+//
+//    return 0;
+//}
+
+//// 이미지 회전 - - 2021/1/15
+//#include "iostream"
+//#include "opencv2/imgproc.hpp"
+//#include "opencv2/imgcodecs.hpp"
+//#include "opencv2/highgui.hpp"
+//
+//using namespace std;
+//using namespace cv;
+//
+//int main()
+//{
+//    Mat src = imread("../Image/cloud.jpg");
+//    Mat dst;
+//
+//    Point center = Point(src.cols / 2, src.rows / 2); // 원본 이미지 회전의 중앙
+//
+//    double angle = 45.0;
+//    double scale = 1.0;
+//
+//    Mat rot_mat = getRotationMatrix2D(center, angle, scale);
+//    // getRotationMatrix2D (Point, 각도(double), 스케일(double)
+//    // 회전의 각도 (양수는 반시계방향, 음수값은 시계 방향
+//    // 이미지의 배율 계수 (1은 원본크기를 의미)
+//
+//    warpAffine(src, dst, rot_mat, src.size()); // 아핀변환을 이미지에 적용
+//
+//    imshow("src", src);
+//    imshow("dst", dst);
+//
+//    waitKey(0);
+//
+//    return 0;
+//}
+
+//// 이미지 대칭 - 2021/1/15
+//#include "iostream"
+//#include "opencv2/imgproc.hpp"
+//#include "opencv2/imgcodecs.hpp"
+//#include "opencv2/highgui.hpp"
+//
+//using namespace std;
+//using namespace cv;
+//
+//int main()
+//{
+//	Mat src = imread("../Image/cloud.jpg");
+//	Mat dst;
+//	Mat dst2;
+//	Mat dst3;
+//
+//	flip(src, dst, 0); // X축 대칭
+//	flip(src, dst2, 1); // Y축 대칭
+//	flip(src, dst3, -1); // XY축 대칭
+//
+//	imshow("src", src);
+//	imshow("dst", dst);
+//	imshow("dst2", dst2);
+//	imshow("dst3", dst3);
+//
+//	waitKey(0);
+//
+//	return 0;
+//}
+
+//// 이미지 크기 조절 (resize) - - 2021/1/15
+//#include "iostream"
+//#include "opencv2/imgproc.hpp"
+//#include "opencv2/imgcodecs.hpp"
+//#include "opencv2/highgui.hpp"
+//
+//using namespace std;
+//using namespace cv;
+//
+//int main()
+//{
+//	Mat img = imread("../Image/cloud.jpg");
+//
+//	Mat img_big, img_small;
+//
+//	resize(img, img_big, Size(0, 0), 1.5, 1.5); // 상대적 크기
+//	resize(img, img_small, Size(200, 200)); // 절대적 크기
+//
+//	imshow("original", img);
+//	imshow("img_big", img_big);
+//	imshow("img_small", img_small);
+//
+//	waitKey(0);
+//
+//	return 0;
+//}
+
+//// 이미지 확대, 축소 (pyrUp, pyrDown) - 2021/1/15
+//#include "iostream"
+//#include "opencv2/imgproc.hpp"
+//#include "opencv2/imgcodecs.hpp"
+//#include "opencv2/highgui.hpp"
+//
+//using namespace std;
+//using namespace cv;
+//
+//int main()
+//{
+//    Mat src = imread("../Image/cloud.jpg");
+//    Mat dst;
+//    Mat dst2;
+//
+//    pyrUp(src, dst, Size(src.cols * 2, src.rows * 2));
+//    pyrDown(src, dst2, Size(src.cols / 2, src.rows / 2));
+//
+//    imshow("src", src);
+//    imshow("dst", dst);
+//    imshow("dst2", dst2);
+//
+//    waitKey(0);
+//
+//    return 0;
+//}
+
+//// 라벨링 (키보드) - 2021/1/13
+//#include<opencv2/core.hpp>
+//#include<opencv2/imgproc.hpp>
+//#include<opencv2/highgui.hpp>
+//using namespace cv;
+//using namespace std;
+//int main()
+//{
+//	Mat image = imread("../Image/Keyboard.png");
+//	Mat image_gray;
+//	Mat image_bi;
+//	Mat label_box;
+//
+//	// 라벨 레이어 변수
+//	Mat img_label;
+//	Mat stats;
+//	Mat centroids;
+//	int label;
+//
+//
+//	// 복사
+//	label_box = image.clone();
+//
+//	//그레이스케일
+//	cvtColor(image, image_gray, CV_RGB2GRAY);
+//
+//
+//	//GaussianBlur(image, image, Size(9, 9), 0);
+//
+//
+//	//이진화
+//	threshold(image_gray, image_bi, 100, 255, CV_THRESH_BINARY);
+//	image_bi = ~image_bi;
+//	
+//	label = connectedComponentsWithStats(image_bi, img_label, stats, centroids, 8, CV_32S);
+//	// 1. 입력 이미지 / 2. 라벨링 결과 이미지 / 3. 라벨링 된 이미지의 정보 / 4. 라벨링 된 이미지의 중심 좌표 /  5. 4방향 or 8방향 /  6. 타입
+//	for (int j = 1; j < label; j++)
+//	{
+//		int area = stats.at<int>(j, CC_STAT_AREA);
+//		int left = stats.at<int>(j, CC_STAT_LEFT);
+//		int top = stats.at<int>(j, CC_STAT_TOP);
+//		int width = stats.at<int>(j, CC_STAT_WIDTH);
+//		int height = stats.at<int>(j, CC_STAT_HEIGHT);
+//
+//		// 라벨링 박스
+//		rectangle(label_box, Point(left, top), Point(left + width, top + height), Scalar(0, 0, 255), 3);
+//		putText(label_box, to_string(j), Point(left + 20, top + 20),
+//			FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 0, 0), 2);
+//		// putText (이미지, 텍스트 내용, 위치, 글씨체, 글씨크기, Scalar::all(255)
+//
+//	}
+//
+//	imshow("original", image);
+//	imshow("Binary", image_bi);
+//	imshow("Label box", label_box);
+//
+//	waitKey(0);
+//}
+
+//// 라벨링 (키보드안 문자) - 2021/1/13
+//#include<opencv2/core.hpp>
+//#include<opencv2/imgproc.hpp>
+//#include<opencv2/highgui.hpp>
+//using namespace cv;
+//using namespace std;
+//int main()
+//{
+//	Mat image = imread("../Image/Keyboard.png");
+//	Mat image_gray;
+//	Mat image_bi;
+//	Mat label_box;
+//
+//	// 라벨 레이어 변수
+//	Mat img_label;
+//	Mat stats;
+//	Mat centroids;
+//	int label;
+//
+//
+//	//이미지 축소/확대
+//	resize(image, image, Size(720, 720));
+//
+//	// 복사
+//	label_box = image.clone();
+//
+//	//그레이스케일
+//	cvtColor(image, image_gray, CV_RGB2GRAY);
+//
+//
+//	//GaussianBlur(image, image, Size(9, 9), 0);
+//	
+//
+//	//이진화
+//	threshold(image_gray, image_bi, 200, 255, CV_THRESH_BINARY); // 그레이 이미지, 
+//
+//	label = connectedComponentsWithStats(image_bi, img_label, stats, centroids, 8, CV_32S);
+//	// 1. 입력 이미지 / 2. 라벨링 결과 이미지 / 3. 라벨링 된 이미지의 정보 / 4. 라벨링 된 이미지의 중심 좌표 /  5. 4방향 or 8방향 /  6. 타입
+//	for (int j = 1; j < label; j++)
+//	{
+//		int area = stats.at<int>(j, CC_STAT_AREA);
+//		int left = stats.at<int>(j, CC_STAT_LEFT);
+//		int top = stats.at<int>(j, CC_STAT_TOP);
+//		int width = stats.at<int>(j, CC_STAT_WIDTH);
+//		int height = stats.at<int>(j, CC_STAT_HEIGHT);
+//
+//		// 라벨링 박스
+//		rectangle(label_box, Point(left, top), Point(left + width, top + height), Scalar(0, 0, 255), 3);
+//		putText(label_box, to_string(j), Point(left + 20, top + 20),
+//			FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 0, 0), 2);
+//		// putText (이미지, 텍스트 내용, 위치, 글씨체, 글씨크기, Scalar::all(255)
+//
+//	}
+//
+//	imshow("original", image);
+//	imshow("Binary", image_bi);
+//	imshow("Label box", label_box);
+//
+//	waitKey(0);
+//}
+
 //// 라벨링 (선배님 코드) - 2021/1/11
 //#include <opencv2/opencv.hpp>
 //#include <windows.h>
@@ -5,7 +373,7 @@
 //using namespace cv;
 //using namespace std;
 //
-//int main(int ac, char** av)
+//int main()
 //{
 //	Mat img = imread("../Image/bacteria.tif");
 //
@@ -54,7 +422,7 @@
 //#include <iostream>
 //using namespace std;
 //using namespace cv;
-//int main(int argc, char* argv[])
+//int main()
 //{
 //    // Load the image
 //    Mat src = imread("../Image/coin.png");
@@ -180,11 +548,11 @@
 //    waitKey();
 //    return 0;
 //}
-
-//// 세그멘테이션 (혼자) - 2021/1/9
+//
+//// 세그멘테이션, 라벨링 (혼자) - 2021/1/9
 //#include<opencv2/core.hpp>
 //#include<opencv2/imgproc.hpp>
-//#include<opencv2/highgui.hpp>+
+//#include<opencv2/highgui.hpp>
 //using namespace cv;
 //using namespace std;
 //int main()
@@ -280,7 +648,7 @@
 //using namespace std;
 //using namespace cv;
 //
-//int main(int argc, char* argv[]) {
+//int main() {
 //
 //    Mat Image = imread("../Image/ThankYou.jpg", IMREAD_COLOR); // 이미지 가져오기
 //
@@ -328,7 +696,7 @@
 //using namespace cv;
 //using namespace std;
 //
-//int main(int ac, char** av) {
+//int main() {
 //	Mat inputImg = imread("../Image/Lenna.png", CV_LOAD_IMAGE_COLOR);
 //
 //	MatND histogramB, histogramG, histogramR;
@@ -400,7 +768,7 @@
 //using namespace cv;
 //using namespace std;
 //
-//int main(int ac, char** av) {
+//int main() {
 //
 //	Mat img_1 = imread("../Image/Lenna.png", 0);	//이미지를 grayscale로 불러옴
 //
@@ -531,7 +899,7 @@
 //using namespace cv;
 //using namespace std;
 //
-//int main(int ac, char** av) {
+//int main() {
 //
 //	Mat img_1 = imread("../Image/ThankYou.jpg", 0);
 //
@@ -557,7 +925,7 @@
 //using namespace cv;
 //using namespace std;
 //
-//int main(int ac, char** av) {
+//int main() {
 //
 //	Mat img_1 = imread("../Image/ThankYou.jpg", 0);
 //
@@ -579,7 +947,7 @@
 //using namespace cv;
 //using namespace std;
 //
-//int main(int ac, char** av) {
+//int main() {
 //
 //	Mat img_1 = imread("../Image/ThankYou.jpg", IMREAD_GRAYSCALE);
 //
@@ -607,7 +975,7 @@
 //using namespace std;
 //
 //
-//int main(int ac, char** av) {
+//int main() {
 //
 //	//Mat image = imread("../Image/ThankYou.jpg");
 //	Mat image = imread("../Image/ThankYou.jpg", IMREAD_GRAYSCALE);
@@ -644,7 +1012,7 @@
 //using namespace std;
 //
 //
-//int main(int ac, char** av) {
+//int main() {
 //
 //	Mat image = imread("../Image/ThankYou.jpg");
 //
@@ -685,7 +1053,7 @@
 //using namespace cv;
 //using namespace std;
 //
-//int main(int ac, char** av) {
+//int main() {
 //
 //	Mat color_img = imread("../Image/ThankYou.jpg");
 //	Mat grayscale_img;
@@ -706,12 +1074,13 @@
 //#include <opencv2/videoio.hpp>
 //#include <iostream>
 //#include <stdio.h>
+//#include <opencv2/imgproc.hpp>
 //
 //using namespace cv;
 //using namespace std;
 //
 //
-//int main(int ac, char** av) {
+//int main() {
 //
 //	//Mat image = imread("../Image/ThankYou.jpg");
 //	Mat image = imread("../Image/ThankYou.jpg", IMREAD_GRAYSCALE);
@@ -733,7 +1102,6 @@
 //	return 0;
 //}
 
-
 //// 이미지 출력 - 2020/12/30
 //#include <opencv2/core.hpp> // opencv에서 사용하는 기본적인 자료구조와 함수들이 포함돼있음.
 //#include <opencv2/imgcodecs.hpp> // 이미지 파일을 읽어오는 함수와 저장하는 함수를 포함
@@ -746,7 +1114,7 @@
 //using namespace std;
 //
 //
-//int main(int ac, char** av) {
+//int main() {
 //
 //	Mat image = imread("../Image/ThankYou.jpg");
 //

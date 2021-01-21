@@ -1,4 +1,314 @@
-﻿//// 세그멘테이션, 라벨링 코드 - 2021/1/11
+﻿//// 키보드 라벨링 (사각형만 크기 조절해서 라벨링) - 2021/1/20
+//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+//using System.Threading.Tasks;
+//using OpenCvSharp;
+//using OpenCvSharp.Blob;
+
+//namespace KeyboardLabeling
+//{
+//    class Program
+//    {
+//        static void Main(string[] args)
+//        {
+//            Mat src = new Mat("../../keyboard.png");
+//            Mat bin = new Mat();
+//            Mat binary = new Mat();
+
+//            Cv2.CvtColor(src, bin, ColorConversionCodes.BGR2GRAY); // gray
+//            Cv2.Threshold(bin, binary, 125, 255, ThresholdTypes.BinaryInv); //이진화
+
+//            Mat result = new Mat(src.Size(), MatType.CV_8UC3);
+//            CvBlobs blobs = new CvBlobs();
+
+//            blobs.Label(binary);
+//            blobs.RenderBlobs(src, result);
+
+//           int text = 1; // 번호
+//            foreach (var item in blobs)
+//            {
+//                if (item.Value.Area > 25000) // 라벨링 면적 확인
+//                {
+//                    CvBlob b = item.Value;
+
+//                    Cv2.Circle(result, b.Contour.StartingPoint, 8, Scalar.Red, 2, LineTypes.AntiAlias);
+//                    Cv2.PutText(result, text.ToString(), new Point(b.Centroid.X, b.Centroid.Y),  // 라벨링 번호 설정 수정
+//                        HersheyFonts.HersheyComplex, 1, Scalar.Yellow, 2, LineTypes.AntiAlias);
+//                    text++;
+//                }
+//            }
+
+//            Cv2.ImShow("src", src);
+//            Cv2.ImShow("binary", binary);
+//            Cv2.ImShow("result", result);
+//            Cv2.WaitKey(0);
+            
+//        }
+//    }
+//}
+
+//// 원근 변환 - 2021/1/17
+//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+//using System.Threading.Tasks;
+//using OpenCvSharp;
+
+//namespace Transformation
+//{
+//    class Program
+//    {
+//        static void Main(string[] args)
+//        {
+//            Mat src = Cv2.ImRead("../../Lenna.png");
+//            Mat dst = new Mat();
+
+//            List<Point2f> src_pts = new List<Point2f>()
+//            {
+//                new Point2f(0.0f, 0.0f),
+//                new Point2f(0.0f, src.Height),
+//                new Point2f(src.Width, src.Height),
+//                new Point2f(src.Width, 0.0f)
+//            };
+
+//            List<Point2f> dst_pts = new List<Point2f>()
+//            {
+//               new Point2f(50.0f, 50.0f),
+//               new Point2f(0.0f, src.Height),
+//               new Point2f(src.Width, src.Height),
+//               new Point2f(src.Width - 100.0f, 0.0f)
+//            };
+
+//            Mat matrix = Cv2.GetPerspectiveTransform(src_pts, dst_pts);
+//            Cv2.WarpPerspective(src, dst, matrix, new Size(src.Width, src.Height));
+
+//            Cv2.ImShow("src", src);
+//            Cv2.ImShow("dst", dst);
+//            Cv2.WaitKey(0);
+//        }
+//    }
+//}
+
+//// 아핀 변환 - 2021/1/17
+//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+//using System.Threading.Tasks;
+//using OpenCvSharp;
+
+//namespace Transformation
+//{
+//    class Program
+//    {
+//        static void Main(string[] args)
+//        {
+//            Mat src = Cv2.ImRead("../../Lenna.png");
+//            Mat dst = new Mat();
+
+//            List<Point2f> src_pts = new List<Point2f>()
+//            {
+//                new Point2f(0.0f, 0.0f),
+//                new Point2f(0.0f, src.Height),
+//                new Point2f(src.Width, src.Height)
+//            };
+
+//            List<Point2f> dst_pts = new List<Point2f>()
+//            {
+//               new Point2f(50.0f, 50.0f),
+//               new Point2f(0.0f, src.Height - 100.0f),
+//               new Point2f(src.Width - 50.0f, src.Height - 50.0f)
+//            };
+
+//            Mat matrix = Cv2.GetAffineTransform(src_pts, dst_pts);
+//            Cv2.WarpAffine(src, dst, matrix, new Size(src.Width, src.Height));
+
+//            Cv2.ImShow("src", src);
+//            Cv2.ImShow("dst", dst);
+//            Cv2.WaitKey(0);
+//        }
+//    }
+//}
+
+//// 이미지 회전 - 2021/1/17
+//using System;
+//using OpenCvSharp;
+
+//namespace Project
+//{
+//    class Program
+//    {
+//        static void Main(string[] args)
+//        {
+//            Mat src = new Mat("../../ThankYou.jpg");
+//            Mat dst = new Mat();
+
+//            Mat matrix = Cv2.GetRotationMatrix2D(new Point2f(src.Width / 2, src.Height / 2), 45.0, 1.0);
+//            // Cv2.GetRotationMatrix2D ( 중심점의 좌표, 회전 각도, 비율)
+
+
+//            Cv2.WarpAffine(src, dst, matrix, new Size(src.Width, src.Height));
+//            // WarpAffine ( 원본 배열, 결과 배열, 행렬, 결과 배열의 크기)
+//            // 결과 배열의 크기를 설정하는 이유 : 회전 후 원본 배열의 이미지 크기와 다를 수 있기 때문
+
+//            Cv2.ImShow("dst", dst);
+//            Cv2.WaitKey(0);
+//        }
+//    }
+//}
+
+//// 이미지 대칭 - 2021/1/17
+//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+//using System.Threading.Tasks;
+//using OpenCvSharp;
+
+//namespace Transformation
+//{
+//    class Program
+//    {
+//        static void Main(string[] args)
+//        {
+//            Mat src = Cv2.ImRead("../../ThankYou.jpg");
+//            Mat dst = new Mat(src.Size(), MatType.CV_8UC3);
+//            Mat dst2 = new Mat(src.Size(), MatType.CV_8UC3);
+//            Mat dst3 = new Mat(src.Size(), MatType.CV_8UC3);
+
+//            Cv2.Flip(src, dst, FlipMode.Y); // Y축대칭
+//            Cv2.Flip(src, dst2, FlipMode.X); // X축대칭
+//            Cv2.Flip(src, dst3, FlipMode.XY); // XY축대칭
+
+//            Cv2.ImShow("src", src);
+//            Cv2.ImShow("dst", dst);
+//            Cv2.ImShow("dst2", dst2);
+//            Cv2.ImShow("dst3", dst3);
+//            Cv2.WaitKey(0);
+//            Cv2.DestroyAllWindows();
+//        }
+//    }
+//}
+
+//// 이미지 자르기 - 2021/1/15
+//using System;
+//using OpenCvSharp;
+
+//namespace Project
+//{
+//    class Program
+//    {
+//        static void Main(string[] args)
+//        {
+//            Mat src = new Mat("../../ThankYou.jpg");
+//            Mat dst = src.SubMat(new Rect(100, 100, 200, 200));
+
+//            Cv2.ImShow("src", src);
+//            Cv2.ImShow("dst", dst);
+//            Cv2.WaitKey(0);
+//        }
+//    }
+//}
+
+
+
+////// 이미지 크기 조절 - 2021/1/15
+//using System;
+//using OpenCvSharp;
+
+//namespace Project
+//{
+//    class Program
+//    {
+//        static void Main(string[] args)
+//        {
+//            Mat src = new Mat("../../ThankYou.jpg");
+//            Mat dst = new Mat();
+//            Mat dst2 = new Mat();
+//            Cv2.Resize(src, dst, new Size(500, 500));
+//            Cv2.Resize(src, dst2, new Size(150, 150));
+
+//            Cv2.ImShow("src", src);
+//            Cv2.ImShow("dst", dst);
+//            Cv2.ImShow("dst2", dst2);
+//            Cv2.WaitKey(0);
+//        }
+//    }
+//}
+
+
+//// 이미지 확대&축소 (간편하게) - 2021/1/15
+//using System;
+//using OpenCvSharp;
+
+//namespace Project
+//{
+//    class Program
+//    {
+//        static void Main(string[] args)
+//        {
+//            Mat src = new Mat("../../ThankYou.jpg", ImreadModes.ReducedColor2);
+//            Mat pyrUp = new Mat();
+//            Mat pyrDown = new Mat();
+
+//            Cv2.PyrUp(src, pyrUp);
+//            Cv2.PyrDown(src, pyrDown);
+
+//            Cv2.ImShow("pyrUp", pyrUp);
+//            Cv2.ImShow("pyrDown", pyrDown);
+//            Cv2.WaitKey(0);
+//        }
+//    }
+//}
+
+//// 라벨링 (키보드) - 2021/1/14
+//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+//using System.Threading.Tasks;
+//using OpenCvSharp;
+//using OpenCvSharp.Blob;
+
+//namespace ImageSegmentationLabeling
+//{
+//    class Program
+//    {
+//        static void Main(string[] args)
+//        {
+//            Mat src = new Mat("../../keyboard.png");
+
+//            Mat bin = new Mat();
+
+//            Cv2.CvtColor(src, bin, ColorConversionCodes.BGR2GRAY); // 흑백화
+//            Cv2.Threshold(bin, bin, 125, 255, ThresholdTypes.Binary); // 이진화
+//            bin = ~bin;
+//            Cv2.ImShow("이진화 체크", bin);
+
+//            Cv2.ImShow("src", src);
+
+//            Mat result = new Mat(src.Size(), MatType.CV_8UC3);
+//            CvBlobs blobs = new CvBlobs();
+//            blobs.Label(bin);
+//            blobs.RenderBlobs(src, result);
+//            foreach (var item in blobs)
+//            {
+//                CvBlob b = item.Value;
+//                Cv2.Circle(result, b.Contour.StartingPoint, 4, Scalar.Red, 2, LineTypes.AntiAlias);
+//                Cv2.PutText(result, b.Label.ToString(), new Point(b.Centroid.X, b.Centroid.Y),
+//                    HersheyFonts.HersheyComplex, 1, Scalar.Yellow, 1, LineTypes.AntiAlias);
+//            }
+//            Cv2.ImShow("result", result); Cv2.WaitKey(0);
+
+//        }
+//    }
+//}
+
+
+//// 세그멘테이션, 라벨링 코드 - 2021/1/11
 //using System;
 //using System.Collections.Generic;
 //using System.Linq;
@@ -16,8 +326,9 @@
 //            Mat src = new Mat("../../sample.png");
 //            Mat bin = new Mat();
 
-//            Cv2.CvtColor(src, bin, ColorConversionCodes.BGR2GRAY);
-//            Cv2.Threshold(bin, bin, 0, 255, ThresholdTypes.Binary);
+//            Cv2.CvtColor(src, bin, ColorConversionCodes.BGR2GRAY); // 흑백화
+
+//            Cv2.Threshold(bin, bin, 0, 255, ThresholdTypes.Binary); // 이진화
 
 //            Cv2.ImShow("src", src);
 
@@ -27,7 +338,8 @@
 //            blobs.RenderBlobs(src, result);
 //            foreach (var item in blobs)
 //            {
-//                CvBlob b = item.Value; Cv2.Circle(result, b.Contour.StartingPoint, 4, Scalar.Red, 2, LineTypes.AntiAlias);
+//                CvBlob b = item.Value;
+//                Cv2.Circle(result, b.Contour.StartingPoint, 4, Scalar.Red, 2, LineTypes.AntiAlias);
 //                Cv2.PutText(result, b.Label.ToString(), new Point(b.Centroid.X, b.Centroid.Y),
 //                    HersheyFonts.HersheyComplex, 1, Scalar.Yellow, 2, LineTypes.AntiAlias);
 //            }
