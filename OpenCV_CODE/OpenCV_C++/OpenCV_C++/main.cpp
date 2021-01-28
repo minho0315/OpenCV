@@ -1,3 +1,42 @@
+// QR코드 인식 - 2021-01-26
+#include "opencv2/opencv.hpp"
+#include <iostream>
+
+using namespace cv;
+using namespace std;
+
+int main(void)
+{
+	QRCodeDetector detector;
+
+	Mat frame, gray;
+	frame = imread("../Image/qr3.jpg");
+	resize(frame, frame, Size(200, 200)); // 절대적 크기
+	if (frame.empty()) {
+		cerr << "Frame load failed!" << endl;
+		return -1;
+	}
+
+	cvtColor(frame, gray, COLOR_BGR2GRAY);
+
+	vector<Point> points;
+
+	if (detector.detect(gray, points)) {
+		polylines(frame, points, true, Scalar(0, 255, 255), 2);
+
+		String info = detector.decode(gray, points);
+		if (!info.empty()) {
+			polylines(frame, points, true, Scalar(0, 0, 255), 2);
+			cout << "Decoded Data : " << info << endl;
+		}
+	}
+
+	imshow("frame", frame);
+	waitKey(0);
+
+	return 0;
+}
+
 //// 라벨링 (키보드 자판만 정확히 세기. 사이즈 옵션) - 2021/1/20
 //#include<opencv2/core.hpp>
 //#include<opencv2/imgproc.hpp>

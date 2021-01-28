@@ -1,4 +1,47 @@
-﻿//// 키보드 라벨링 (사각형만 크기 조절해서 라벨링) - 2021/1/20
+﻿// QR코드 인식 - 2020/01/27
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Numerics;
+using System.Text;
+using System.Threading.Tasks;
+using OpenCvSharp;
+using OpenCvSharp.Blob;
+using ZXing;
+
+namespace QRcodeApp
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Mat src = Cv2.ImRead("../../qr4.jpg");
+            
+            // create a barcode reader instance
+            var barcodeReader = new BarcodeReader();
+
+            // create an in memory bitmap
+            var barcodeBitmap = (Bitmap)Bitmap.FromFile("../../qr4.jpg");
+
+            // decode the barcode from the in memory bitmap
+            var barcodeResult = barcodeReader.Decode(barcodeBitmap);
+
+            // output results to consoles
+            Console.WriteLine($"Decoded barcode text: {barcodeResult?.Text}");
+            Console.WriteLine($"Barcode format: {barcodeResult?.BarcodeFormat}");
+
+
+            Cv2.ImShow("src", src);
+
+            Cv2.WaitKey(0);
+            Cv2.DestroyAllWindows();
+
+        }
+    }
+}
+
+//// 키보드 라벨링 (사각형만 크기 조절해서 라벨링) - 2021/1/20
 //using System;
 //using System.Collections.Generic;
 //using System.Linq;
@@ -44,7 +87,7 @@
 //            Cv2.ImShow("binary", binary);
 //            Cv2.ImShow("result", result);
 //            Cv2.WaitKey(0);
-            
+
 //        }
 //    }
 //}
