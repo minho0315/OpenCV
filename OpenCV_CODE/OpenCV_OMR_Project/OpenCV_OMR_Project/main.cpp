@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <map>
 #include "transform.hpp"
+#include <string>
 using namespace std;
 using namespace cv;
 const int NoOfChoice = 5;
@@ -30,19 +31,11 @@ void OMR(int n)
     {
 
         Mat image, gray, blurred, edge;
-
-
-        //Step 1: Detect the exam in an image
-        // if문이 아닌, i의 값에 따라 omr_test_01, 02, 03 ... 이런식으로 파일이름을 따로 지정할 수 있게 코딩할 수 있는지 알아보는중.
-        // => 안된다면 if문으로 코딩?
-        if (i == 1)
-        {
-            image = imread("omr_test_01.png", IMREAD_COLOR);
-        }
-        else if( i == 2)
-        {
-            image = imread("omr_test_02.png", IMREAD_COLOR);
-        }
+        string filename = "omr_test_";
+        filename.append(to_string(i));
+        filename.append(".png");
+        
+        image = imread(filename, IMREAD_COLOR);
 
 
         if (image.empty())
