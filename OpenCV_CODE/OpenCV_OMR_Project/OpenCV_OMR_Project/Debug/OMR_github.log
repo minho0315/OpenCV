@@ -1,0 +1,5 @@
+﻿  main.cpp
+C:\Users\고탱\source\repos\OpenCV\OMR_github\OMR_github\main.cpp(9,10): fatal error C1083: 포함 파일을 열 수 없습니다. 'opencv2/opencv.hpp': No such file or directory
+  transform.cpp
+C:\Users\고탱\source\repos\OpenCV\OMR_github\OMR_github\transform.cpp(8,10): fatal error C1083: 포함 파일을 열 수 없습니다. 'opencv2/opencv.hpp': No such file or directory
+  코드를 생성하고 있습니다...
