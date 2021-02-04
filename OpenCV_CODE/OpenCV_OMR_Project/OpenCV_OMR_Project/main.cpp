@@ -11,38 +11,36 @@ using namespace cv;
 const int NoOfChoice = 5;
 const int NoOfQuestion = 5;
 int i = 1; // 몇번째 학생인지를 나타내는 변수
-list<double> score_All;
-list<int> rank;
+list<double> score_All; // 평균을 내기 위한 각 학생들의 점수
+list<int> rank; // 등수
 
-void OMR(int n)
+void OMR()
 {
-    std::map<int, int> standardAnswer;
-    std::map<int, int> testerAnswer;
-    standardAnswer.insert(std::make_pair(0, 1)); //Question 1: answer: B
-    standardAnswer.insert(std::make_pair(1, 3)); //Question 2: answer: D
-    standardAnswer.insert(std::make_pair(2, 0)); //Question 3: answer: A
-    standardAnswer.insert(std::make_pair(3, 2)); //Question 4: answer: C
-    standardAnswer.insert(std::make_pair(4, 1)); //Question 5: answer: B
-    if (n == 0)
-    {
-        return;
-    }
-    else
-    {
+    map<int, int> standardAnswer; // 원래 정답
+    map<int, int> testerAnswer; // 학생의 답변
+    standardAnswer.insert(make_pair(0, 1)); //Question 1: answer: B
+    standardAnswer.insert(make_pair(1, 3)); //Question 2: answer: D
+    standardAnswer.insert(make_pair(2, 0)); //Question 3: answer: A
+    standardAnswer.insert(make_pair(3, 2)); //Question 4: answer: C
+    standardAnswer.insert(make_pair(4, 1)); //Question 5: answer: B
+    // make_pair(변수1, 변수2) 변수1과 변수2가 들어간 pair를 만들어줌
 
         Mat image, gray, blurred, edge;
+
+        // 이미지파일을 상황에 맞게 불러오기 (string.append , to_string() 사용)
         string filename = "omr_test_";
         filename.append(to_string(i));
         filename.append(".png");
-        
+
         image = imread(filename, IMREAD_COLOR);
+        // image = imread("omr_test_(?).png");
 
-
-        if (image.empty())
+        if (image.empty()) // 이미지가 없을때
         {
-            std::cout << "Failed to read file\n";
+            cout << i << "번째 학생의 OMR 이미지가 없습니다." << endl;
             exit(1);
         }
+
         cvtColor(image, gray, COLOR_BGR2GRAY);
         GaussianBlur(gray, blurred, Size(5, 5), 0);
         Canny(blurred, edge, 75, 200);
@@ -53,22 +51,24 @@ void OMR(int n)
         imshow("Canny edge", edge);*/
 
         Mat paper, warped, thresh;
-        std::vector<std::vector<Point> > contours;
-        std::vector<Vec4i> hierarchy;
-        std::vector<Point> approxCurve, docCnt;
+        vector<vector<Point> > contours;
+        vector<Vec4i> hierarchy;
+        vector<Point> approxCurve, docCnt;
 
-        /// Find contours
+        // Find contours
         findContours(edge, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
-        std::sort(contours.begin(), contours.end(), compareContourAreas);
+        // 정렬
+        sort(contours.begin(), contours.end(), compareContourAreas);
 
-        //Find document countour
+
+        // Find document countour
         for (const auto& element : contours)
         {
-            double perimeter = arcLength(element, true);
+            double perimeter = arcLength(element, true); // 외곽선 길이 반환
             approxPolyDP(element, approxCurve, 0.05 * perimeter, true);
 
-            if (approxCurve.size() == 4)
+            if (approxCurve.size() == 4) // 사각형 검출(OMR 카드)
             {
                 docCnt = approxCurve;
                 break;
@@ -89,15 +89,15 @@ void OMR(int n)
 
         findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
-        std::vector<std::vector<Point> > contours_poly(contours.size());
-        std::vector<Rect> boundRect(contours.size());
-        std::vector<std::vector<Point>> questionCnt;
+        vector<vector<Point> > contours_poly(contours.size());
+        vector<Rect> boundRect(contours.size());
+        vector<vector<Point>> questionCnt;
 
 
         //Find document countour
         for (int i = 0; i < contours.size(); i++)
         {
-            approxPolyDP(Mat(contours[i]), contours_poly[i], 0.1, true);
+            approxPolyDP(Mat(contours[i]), contours_poly[i], 0.1, true); // 원 검출
             int w = boundingRect(Mat(contours[i])).width;
             int h = boundingRect(Mat(contours[i])).height;
             double ar = (double)w / h;
@@ -109,14 +109,14 @@ void OMR(int n)
 
         }
 
-        //std::cout << "\nquestionCnt " << questionCnt.size() << "\n";
+        //cout << "\nquestionCnt " << questionCnt.size() << "\n";
 
         //Step 4: Sort the questions/bubbles into rows.
-        sort_contour(questionCnt, 0, (int)questionCnt.size(), std::string("top-to-bottom"));
+        sort_contour(questionCnt, 0, (int)questionCnt.size(), string("top-to-bottom"));
 
         for (int i = 0; i < questionCnt.size(); i = i + NoOfChoice)
         {
-            sort_contour(questionCnt, i, i + 5, std::string("left-to-right"));
+            sort_contour(questionCnt, i, i + 5, string("left-to-right"));
         }
 
         //Step 5: Determine the marked answer
@@ -135,13 +135,13 @@ void OMR(int n)
                     answerKey = j;
                 }
             }
-            testerAnswer.insert(std::make_pair(i / NoOfChoice - 1, answerKey));
-            std::cout << "Question: " << i / NoOfChoice << " Tester's Answer: " << answerKey << "\n";
+            testerAnswer.insert(make_pair(i / NoOfChoice - 1, answerKey));
+            cout << "Question: " << i / NoOfChoice << " Tester's Answer: " << answerKey << "\n";
         }
 
         //Step 6: Lookup the correct answer in our answer key to determine if the user was correct in their choice.
-        std::map<int, int>::const_iterator itStandardAnswer;
-        std::map<int, int>::const_iterator itTesterAnswer;
+        map<int, int>::const_iterator itStandardAnswer;
+        map<int, int>::const_iterator itTesterAnswer;
 
         itStandardAnswer = standardAnswer.begin();
         itTesterAnswer = testerAnswer.begin();
@@ -176,7 +176,7 @@ void OMR(int n)
         else
             color = Scalar(0, 0, 255);
 
-        putText(paper, std::to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
+        putText(paper, to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
 
         cout << "학생" << i << "의 성적" << endl;
         cout << "총 문제의 수 : " << currentQuestion << endl;
@@ -187,19 +187,20 @@ void OMR(int n)
         waitKey();
         score_All.push_back(score);
         i++;
-        OMR(n - 1);
-    }
 }
 
 
 int main()
 {
-    
+
     int n; // 학생의 수 (OMR 카드 수)
     cout << "학생의 수를 입력해주세요 : ";
     cin >> n;
 
-    OMR(n);
+    for (int i = 0; i < n; i++) {
+        OMR();
+    }
+
 
     double average = 0;
     // 스코어 출력
