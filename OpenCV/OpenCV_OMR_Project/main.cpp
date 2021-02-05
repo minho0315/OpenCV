@@ -13,229 +13,220 @@ using namespace cv;
 const int NoOfChoice = 5;
 const int NoOfQuestion = 6;
 
-int i = 1; // 몇번째 학생인지를 나타내는 변수
 list<double> score_All;
-list<double> rank;
+std::map<int, int> answerAll;
 
 void OMR(int n)
 {
-    std::map<int, int> standardAnswer;
-    std::map<int, int> testerAnswer;
+	std::map<int, int> standardAnswer;
+	std::map<int, int> testerAnswer;
 
-    standardAnswer.insert(std::make_pair(0, 1)); //Question 1: answer: B
-    standardAnswer.insert(std::make_pair(1, 1)); //Question 1: answer: B
-    standardAnswer.insert(std::make_pair(2, 3)); //Question 2: answer: D
-    standardAnswer.insert(std::make_pair(3, 0)); //Question 3: answer: A
-    standardAnswer.insert(std::make_pair(4, 2)); //Question 4: answer: C
-    standardAnswer.insert(std::make_pair(5, 1)); //Question 5: answer: B
+	standardAnswer.insert(std::make_pair(0, 0)); //id default
+	standardAnswer.insert(std::make_pair(1, 1)); //Question 1: answer: B
+	standardAnswer.insert(std::make_pair(2, 3)); //Question 2: answer: D
+	standardAnswer.insert(std::make_pair(3, 0)); //Question 3: answer: A
+	standardAnswer.insert(std::make_pair(4, 2)); //Question 4: answer: C
+	standardAnswer.insert(std::make_pair(5, 1)); //Question 5: answer: B
 
+		//Step 1: Detect the exam in an image
+	Mat image, gray, blurred, edge;
+	string filename = "omr2/omr_test_";
+	filename.append(to_string(n));
+	filename.append(".png");
 
-    if (n == 0)
-    {
-        return;
-    }
-    else
-    {
-        //Step 1: Detect the exam in an image
-        Mat image, gray, blurred, edge;
-        string filename = "omr2/omr_test_";
-        filename.append(to_string(i));
-        filename.append(".png");
-        
-        image = imread(filename, IMREAD_COLOR);
+	image = imread(filename, IMREAD_COLOR);
 
-        if (image.empty())
-        {
-            std::cout << "Failed to read file\n";
-            exit(1);
-        }
+	if (image.empty())
+	{
+		std::cout << "Failed to read file\n";
+		exit(1);
+	}
 
-        cvtColor(image, gray, COLOR_BGR2GRAY);
-        GaussianBlur(gray, blurred, Size(5, 5), 0);
-        Canny(blurred, edge, 75, 200);
+	cvtColor(image, gray, COLOR_BGR2GRAY);
+	GaussianBlur(gray, blurred, Size(5, 5), 0);
+	Canny(blurred, edge, 75, 200);
 
-        //imshow("image", image);
-        //imshow("gray", gray);
-        //imshow("blurred", blurred);
-        //imshow("Canny edge", edge);
+	//imshow("image", image);
+	//imshow("gray", gray);
+	//imshow("blurred", blurred);
+	//imshow("Canny edge", edge);
 
-        Mat paper, warped, thresh;
-        std::vector<std::vector<Point> > contours;
-        std::vector<Vec4i> hierarchy;
-        std::vector<Point> approxCurve, docCnt;
+	Mat paper, warped, thresh;
+	std::vector<std::vector<Point> > contours;
+	std::vector<Vec4i> hierarchy;
+	std::vector<Point> approxCurve, docCnt;
 
-        /// Find contours
-        findContours(edge, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	/// Find contours
+	findContours(edge, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
-        std::sort(contours.begin(), contours.end(), compareContourAreas);
+	std::sort(contours.begin(), contours.end(), compareContourAreas);
 
-        //Find document countour
-        for (const auto& element : contours)
-        {
-            double perimeter = arcLength(element, true);
-            approxPolyDP(element, approxCurve, 0.05 * perimeter, true);
+	//Find document countour
+	for (const auto& element : contours)
+	{
+		double perimeter = arcLength(element, true);
+		approxPolyDP(element, approxCurve, 0.05 * perimeter, true);
 
-            if (approxCurve.size() == 4)
-            {
-                docCnt = approxCurve;
-                break;
-            }
-        }
+		if (approxCurve.size() == 4)
+		{
+			docCnt = approxCurve;
+			break;
+		}
+	}
 
-        //Step 2: Apply a perspective transform to extract the top-down, birds-eye-view of the exam
+	//Step 2: Apply a perspective transform to extract the top-down, birds-eye-view of the exam
 
-        four_point_transform(image, paper, docCnt);
-        //imshow("paper", paper);
-        four_point_transform(gray, warped, docCnt);
-        //imshow("warped", warped);
+	four_point_transform(image, paper, docCnt);
+	//imshow("paper", paper);
+	four_point_transform(gray, warped, docCnt);
+	//imshow("warped", warped);
 
-        //Step 3: Extract the sets of bubbles (questionCnt)
+	//Step 3: Extract the sets of bubbles (questionCnt)
 
-        threshold(warped, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
-        //imshow("thresh", thresh);
+	threshold(warped, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
+	//imshow("thresh", thresh);
 
-        findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
-        std::vector<std::vector<Point> > contours_poly(contours.size());
-        std::vector<Rect> boundRect(contours.size());
-        std::vector<std::vector<Point>> questionCnt;
+	std::vector<std::vector<Point> > contours_poly(contours.size());
+	std::vector<Rect> boundRect(contours.size());
+	std::vector<std::vector<Point>> questionCnt;
 
-        //Find document countour
-        for (int i = 0; i < contours.size(); i++) //원검출
-        {
-            approxPolyDP(Mat(contours[i]), contours_poly[i], 0.1, true);
-            int w = boundingRect(Mat(contours[i])).width;
-            int h = boundingRect(Mat(contours[i])).height;
-            double ar = (double)w / h;
+	//Find document countour
+	for (int i = 0; i < contours.size(); i++) //원검출
+	{
+		approxPolyDP(Mat(contours[i]), contours_poly[i], 0.1, true);
+		int w = boundingRect(Mat(contours[i])).width;
+		int h = boundingRect(Mat(contours[i])).height;
+		double ar = (double)w / h;
 
-            if (hierarchy[i][3] == -1) //No parent 
-                if (w >= 20 && h >= 20 && ar < 1.1 && ar > 0.9)
-                    questionCnt.push_back(contours_poly[i]);
+		if (hierarchy[i][3] == -1) //No parent 
+			if (w >= 20 && h >= 20 && ar < 1.1 && ar > 0.9)
+				questionCnt.push_back(contours_poly[i]);
 
 
-        }
+	}
 
-        //std::cout << "\nquestionCnt " << questionCnt.size() << "\n";
+	//std::cout << "\nquestionCnt " << questionCnt.size() << "\n";
 
-        //Step 4: Sort the questions/bubbles into rows. //문제정렬
+	//Step 4: Sort the questions/bubbles into rows. //문제정렬
 
-        sort_contour(questionCnt, 0, (int)questionCnt.size(), std::string("top-to-bottom"));
+	sort_contour(questionCnt, 0, (int)questionCnt.size(), std::string("top-to-bottom"));
 
-        for (int i = 0; i < questionCnt.size(); i = i + NoOfChoice)
-        {
-            sort_contour(questionCnt, i, i + 5, std::string("left-to-right"));
-        }
+	for (int i = 0; i < questionCnt.size(); i = i + NoOfChoice)
+	{
+		sort_contour(questionCnt, i, i + 5, std::string("left-to-right"));
+	}
 
-        //Step 5: Determine the marked answer
-        for (int i = 0; i < questionCnt.size();)
-        {
-            int maxPixel = 0;
-            int answerKey = 0;
-            for (int j = 0; j < NoOfChoice; ++i, ++j)
-            {
-                Mat mask = Mat::zeros(thresh.size(), CV_8U);
-                drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
-                bitwise_and(mask, thresh, mask);
-                if (countNonZero(mask) > maxPixel)
-                {
-                    maxPixel = countNonZero(mask);
-                    answerKey = j;
-                }
-            }
-            testerAnswer.insert(std::make_pair(i / NoOfChoice - 1, answerKey));
-            std::cout << "Question: " << i / NoOfChoice << " Tester's Answer: " << answerKey << "\n";
-        }
+	//Step 5: Determine the marked answer
+	for (int i = 0; i < questionCnt.size();)
+	{
+		int maxPixel = 0;
+		int answerKey = 0;
+		for (int j = 0; j < NoOfChoice; ++i, ++j)
+		{
+			Mat mask = Mat::zeros(thresh.size(), CV_8U);
+			drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
+			bitwise_and(mask, thresh, mask);
+			if (countNonZero(mask) > maxPixel)
+			{
+				maxPixel = countNonZero(mask);
+				answerKey = j;
+			}
+		}
+		testerAnswer.insert(std::make_pair(i / NoOfChoice - 1, answerKey));
+		if (i / NoOfChoice != 1)
+		{
+			std::cout << "Question: " << i / NoOfChoice - 1 << " Tester's Answer: " << answerKey << "\n";
+		}
+	}
 
-        //Step 6: Lookup the correct answer in our answer key to determine if the user was correct in their choice.
-        std::map<int, int>::const_iterator itStandardAnswer;
-        std::map<int, int>::const_iterator itTesterAnswer;
+	//Step 6: Lookup the correct answer in our answer key to determine if the user was correct in their choice.
+	std::map<int, int>::const_iterator itStandardAnswer;
+	std::map<int, int>::const_iterator itTesterAnswer;
 
-        itStandardAnswer = standardAnswer.begin();
-        itTesterAnswer = testerAnswer.begin();
+	itStandardAnswer = standardAnswer.begin();
+	itTesterAnswer = testerAnswer.begin();
 
-        int correct = 0;
-        int currentQuestion = 0;
-        int id = 0;
+	int correct = 0;
+	int currentQuestion = 0;
+	int id = 0;
 
-        while (itStandardAnswer != standardAnswer.end())
-        {
-            if (itStandardAnswer == standardAnswer.begin())
-            {
-                id = itStandardAnswer->second;
-                ++currentQuestion;
-                ++itTesterAnswer;
-                ++itStandardAnswer;
-                continue;
-            }
-            if (itStandardAnswer->second == itTesterAnswer->second)
-            {
-                ++correct;
-                //Circle in GREEN
-                drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 255, 0), 2, 8, hierarchy, 0, Point());
-            }
-            else //Circle in RED
-            {
-                drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 0, 255), 2, 8, hierarchy, 0, Point());
-            }
+	while (itStandardAnswer != standardAnswer.end())
+	{
+		if (itStandardAnswer == standardAnswer.begin()) //id
+		{
+			drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itTesterAnswer->second, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point());
+			id = itTesterAnswer->second + 1;
 
-            ++currentQuestion;
-            ++itTesterAnswer;
-            ++itStandardAnswer;
-        }
+			++currentQuestion;
+			++itTesterAnswer;
+			++itStandardAnswer;
 
-        //Step 7: Display the score
-        double score = ((double)correct / NoOfQuestion * 100);
+			continue;
+		}
+		if (itStandardAnswer->second == itTesterAnswer->second)
+		{
+			++correct;
+			//Circle in GREEN
+			drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 255, 0), 2, 8, hierarchy, 0, Point());
+		}
+		else //Circle in RED
+		{
+			drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 0, 255), 2, 8, hierarchy, 0, Point());
+		}
 
-        Scalar color;
-        if (score >= 60.0)
-            color = Scalar(0, 255, 0);
-        else
-            color = Scalar(0, 0, 255);
+		++currentQuestion;
+		++itTesterAnswer;
+		++itStandardAnswer;
+	}
 
-        putText(paper, std::to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
+	//Step 7: Display the score
+	double score = ((double)correct / (NoOfQuestion - 1) * 100);
 
-        cout << "학생" << id << "의 성적" << endl;
-        cout << "총 문제의 수 : " << currentQuestion << endl;
-        cout << "맞은 정답의 수 : " << correct << "\n";
-        cout << "점수는 " << score << "점 입니다." << "" << endl;
-        cout << "정답률은 " << score << "% 입니다." << "" << endl;
-        cout << endl;
-        imshow("Marked Paper", paper);
+	Scalar color;
+	if (score >= 60.0)
+		color = Scalar(0, 255, 0);
+	else
+		color = Scalar(0, 0, 255);
 
-        waitKey();
+	putText(paper, std::to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
 
-        score_All.push_back(score);
-        i++;
-        OMR(n - 1);
-    }
+	cout << "학생" << id << "의 성적" << endl;
+	cout << "총 문제의 수 : " << currentQuestion - 1 << endl;
+	cout << "맞은 정답의 수 : " << correct << "\n";
+	cout << "점수는 " << score << "점 입니다." << "" << endl;
+	cout << "정답률은 " << score << "% 입니다." << "" << endl;
+	cout << endl;
+
+	imshow("Marked Paper", paper);
+	waitKey();
+
+	//score_All.push_back(score);
+
+	answerAll.insert(std::make_pair(id, score)); //id default
 }
 
 int main()
 {
-    int n; // 학생의 수 (OMR 카드 수)
-    cout << "학생의 수를 입력해주세요 : ";
-    cin >> n;
+	int n; // 학생의 수 (OMR 카드 수)
+	cout << "학생의 수를 입력해주세요 : ";
+	cin >> n;
 
-    OMR(n);
+	for (int i = 0; i < n; i++)
+		OMR(i + 1);
 
-    double average = 0;
+	double average = 0;
 
-    // 스코어 출력
-    int a = 0;
-    for (auto iter = begin(score_All); iter != end(score_All); iter++)
-    {
-        average += *iter;
-        cout << "학생" << ++a << "의 점수는 " << *iter << "점 입니다." << endl;
-    }
-    average /= n;
-    cout << "\n평균 점수는 " << average << "점 입니다." << endl;
+	std::map<int, int>::const_iterator itAnswerAll;
+	itAnswerAll = answerAll.begin();
+	while (itAnswerAll != answerAll.end())
+	{
+		cout << "학생" << itAnswerAll->first << "의 점수는 " << itAnswerAll->second << "점 입니다." << endl;
+		average += itAnswerAll->second;
+		++itAnswerAll;
+	}
+	cout << "\n평균 점수는 " << average << "점 입니다." << endl;
 
-    score_All.sort(greater<double>());
-    int b = 1;
-    for (auto iter = begin(score_All); iter != end(score_All); iter++)
-    {
-        cout << b << "등  " << *iter << "점 입니다." << endl;
-    }
-
-    return 0;
+	return 0;
 }
