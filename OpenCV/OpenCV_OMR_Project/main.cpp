@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <cstdlib>
 #include <map>
-#include "transform.hpp"
 #include <string>
+#include "transform.hpp"
 
 using namespace std;
 using namespace cv;
@@ -13,22 +13,21 @@ using namespace cv;
 const int NoOfChoice = 5;
 const int NoOfQuestion = 6;
 
-list<double> score_All;
-std::map<int, int> answerAll;
+map<int, int> answerAll;
 
 void OMR(int n)
 {
-	std::map<int, int> standardAnswer;
-	std::map<int, int> testerAnswer;
+	map<int, int> standardAnswer;
+	map<int, int> testerAnswer;
 
-	standardAnswer.insert(std::make_pair(0, 0)); //id default
-	standardAnswer.insert(std::make_pair(1, 1)); //Question 1: answer: B
-	standardAnswer.insert(std::make_pair(2, 3)); //Question 2: answer: D
-	standardAnswer.insert(std::make_pair(3, 0)); //Question 3: answer: A
-	standardAnswer.insert(std::make_pair(4, 2)); //Question 4: answer: C
-	standardAnswer.insert(std::make_pair(5, 1)); //Question 5: answer: B
+	standardAnswer.insert(make_pair(0, 0)); //id default
+	standardAnswer.insert(make_pair(1, 1)); //Question 1: answer: B
+	standardAnswer.insert(make_pair(2, 3)); //Question 2: answer: D
+	standardAnswer.insert(make_pair(3, 0)); //Question 3: answer: A
+	standardAnswer.insert(make_pair(4, 2)); //Question 4: answer: C
+	standardAnswer.insert(make_pair(5, 1)); //Question 5: answer: B
 
-		//Step 1: Detect the exam in an image
+	//Step 1: Detect the exam in an image
 	Mat image, gray, blurred, edge;
 	string filename = "omr2/omr_test_";
 	filename.append(to_string(n));
@@ -38,7 +37,7 @@ void OMR(int n)
 
 	if (image.empty())
 	{
-		std::cout << "Failed to read file\n";
+		cout << "Failed to read file\n";
 		exit(1);
 	}
 
@@ -46,20 +45,14 @@ void OMR(int n)
 	GaussianBlur(gray, blurred, Size(5, 5), 0);
 	Canny(blurred, edge, 75, 200);
 
-	//imshow("image", image);
-	//imshow("gray", gray);
-	//imshow("blurred", blurred);
-	//imshow("Canny edge", edge);
-
 	Mat paper, warped, thresh;
-	std::vector<std::vector<Point> > contours;
-	std::vector<Vec4i> hierarchy;
-	std::vector<Point> approxCurve, docCnt;
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	vector<Point> approxCurve, docCnt;
 
 	/// Find contours
 	findContours(edge, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-
-	std::sort(contours.begin(), contours.end(), compareContourAreas);
+	sort(contours.begin(), contours.end(), compareContourAreas);
 
 	//Find document countour
 	for (const auto& element : contours)
@@ -77,20 +70,16 @@ void OMR(int n)
 	//Step 2: Apply a perspective transform to extract the top-down, birds-eye-view of the exam
 
 	four_point_transform(image, paper, docCnt);
-	//imshow("paper", paper);
 	four_point_transform(gray, warped, docCnt);
-	//imshow("warped", warped);
 
 	//Step 3: Extract the sets of bubbles (questionCnt)
 
 	threshold(warped, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
-	//imshow("thresh", thresh);
-
 	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
-	std::vector<std::vector<Point> > contours_poly(contours.size());
-	std::vector<Rect> boundRect(contours.size());
-	std::vector<std::vector<Point>> questionCnt;
+	vector<vector<Point> > contours_poly(contours.size());
+	vector<Rect> boundRect(contours.size());
+	vector<vector<Point>> questionCnt;
 
 	//Find document countour
 	for (int i = 0; i < contours.size(); i++) //원검출
@@ -107,15 +96,13 @@ void OMR(int n)
 
 	}
 
-	//std::cout << "\nquestionCnt " << questionCnt.size() << "\n";
-
 	//Step 4: Sort the questions/bubbles into rows. //문제정렬
 
-	sort_contour(questionCnt, 0, (int)questionCnt.size(), std::string("top-to-bottom"));
+	sort_contour(questionCnt, 0, (int)questionCnt.size(), string("top-to-bottom"));
 
 	for (int i = 0; i < questionCnt.size(); i = i + NoOfChoice)
 	{
-		sort_contour(questionCnt, i, i + 5, std::string("left-to-right"));
+		sort_contour(questionCnt, i, i + 5, string("left-to-right"));
 	}
 
 	//Step 5: Determine the marked answer
@@ -134,16 +121,16 @@ void OMR(int n)
 				answerKey = j;
 			}
 		}
-		testerAnswer.insert(std::make_pair(i / NoOfChoice - 1, answerKey));
+		testerAnswer.insert(make_pair(i / NoOfChoice - 1, answerKey));
 		if (i / NoOfChoice != 1)
 		{
-			std::cout << "Question: " << i / NoOfChoice - 1 << " Tester's Answer: " << answerKey << "\n";
+			cout << "Question: " << i / NoOfChoice - 1 << " Tester's Answer: " << answerKey << "\n";
 		}
 	}
 
 	//Step 6: Lookup the correct answer in our answer key to determine if the user was correct in their choice.
-	std::map<int, int>::const_iterator itStandardAnswer;
-	std::map<int, int>::const_iterator itTesterAnswer;
+	map<int, int>::const_iterator itStandardAnswer;
+	map<int, int>::const_iterator itTesterAnswer;
 
 	itStandardAnswer = standardAnswer.begin();
 	itTesterAnswer = testerAnswer.begin();
@@ -157,8 +144,8 @@ void OMR(int n)
 		if (itStandardAnswer == standardAnswer.begin()) //id
 		{
 			drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itTesterAnswer->second, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point());
+			
 			id = itTesterAnswer->second + 1;
-
 			++currentQuestion;
 			++itTesterAnswer;
 			++itStandardAnswer;
@@ -190,21 +177,23 @@ void OMR(int n)
 	else
 		color = Scalar(0, 0, 255);
 
-	putText(paper, std::to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
+	putText(paper, to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
 
 	cout << "학생" << id << "의 성적" << endl;
 	cout << "총 문제의 수 : " << currentQuestion - 1 << endl;
-	cout << "맞은 정답의 수 : " << correct << "\n";
+	cout << "맞은 정답의 수 : " << correct << endl;
 	cout << "점수는 " << score << "점 입니다." << "" << endl;
-	cout << "정답률은 " << score << "% 입니다." << "" << endl;
 	cout << endl;
 
 	imshow("Marked Paper", paper);
 	waitKey();
 
-	//score_All.push_back(score);
+	answerAll.insert(make_pair(id, score)); //id default
+}
 
-	answerAll.insert(std::make_pair(id, score)); //id default
+bool cmp(const pair<int, int>& a, const pair<int, int>& b) {
+	if (a.second == b.second) return a.first < b.first;
+	return a.second > b.second;
 }
 
 int main()
@@ -216,17 +205,33 @@ int main()
 	for (int i = 0; i < n; i++)
 		OMR(i + 1);
 
+	double sum = 0;
 	double average = 0;
-
-	std::map<int, int>::const_iterator itAnswerAll;
+	map<int, int>::const_iterator itAnswerAll;
 	itAnswerAll = answerAll.begin();
+
+	cout << "===========총합============" << endl;
+
 	while (itAnswerAll != answerAll.end())
 	{
 		cout << "학생" << itAnswerAll->first << "의 점수는 " << itAnswerAll->second << "점 입니다." << endl;
-		average += itAnswerAll->second;
+		sum += itAnswerAll->second;
 		++itAnswerAll;
 	}
-	cout << "\n평균 점수는 " << average << "점 입니다." << endl;
+
+	average = sum / answerAll.size();
+
+	cout << "\n합계는 " << sum << "점 입니다." << endl;
+	cout << "평균 점수는 " << average << "점 입니다." << endl;
+
+	vector<pair<int, int>> vec(answerAll.begin(), answerAll.end());
+	sort(vec.begin(), vec.end(), cmp);
+
+	cout << "\n===========등수===========" << endl;
+
+	for (auto num : vec) {
+		cout  <<  "학생" << num.first << " " << num.second << "점" <<  endl;
+	}
 
 	return 0;
 }
