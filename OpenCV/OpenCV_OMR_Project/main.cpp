@@ -11,21 +11,24 @@ using namespace std;
 using namespace cv;
 
 const int NoOfChoice = 5;
-const int NoOfQuestion = 5;
+const int NoOfQuestion = 6;
 
 int i = 1; // 몇번째 학생인지를 나타내는 변수
 list<double> score_All;
-//list<double> rank;
+list<double> rank;
 
 void OMR(int n)
 {
     std::map<int, int> standardAnswer;
     std::map<int, int> testerAnswer;
+
     standardAnswer.insert(std::make_pair(0, 1)); //Question 1: answer: B
-    standardAnswer.insert(std::make_pair(1, 3)); //Question 2: answer: D
-    standardAnswer.insert(std::make_pair(2, 0)); //Question 3: answer: A
-    standardAnswer.insert(std::make_pair(3, 2)); //Question 4: answer: C
-    standardAnswer.insert(std::make_pair(4, 1)); //Question 5: answer: B
+    standardAnswer.insert(std::make_pair(1, 1)); //Question 1: answer: B
+    standardAnswer.insert(std::make_pair(2, 3)); //Question 2: answer: D
+    standardAnswer.insert(std::make_pair(3, 0)); //Question 3: answer: A
+    standardAnswer.insert(std::make_pair(4, 2)); //Question 4: answer: C
+    standardAnswer.insert(std::make_pair(5, 1)); //Question 5: answer: B
+
 
     if (n == 0)
     {
@@ -35,7 +38,7 @@ void OMR(int n)
     {
         //Step 1: Detect the exam in an image
         Mat image, gray, blurred, edge;
-        string filename = "omr/omr_test_";
+        string filename = "omr2/omr_test_";
         filename.append(to_string(i));
         filename.append(".png");
         
@@ -98,14 +101,14 @@ void OMR(int n)
         std::vector<std::vector<Point>> questionCnt;
 
         //Find document countour
-        for (int i = 0; i < contours.size(); i++)
+        for (int i = 0; i < contours.size(); i++) //원검출
         {
             approxPolyDP(Mat(contours[i]), contours_poly[i], 0.1, true);
             int w = boundingRect(Mat(contours[i])).width;
             int h = boundingRect(Mat(contours[i])).height;
             double ar = (double)w / h;
 
-            if (hierarchy[i][3] == -1) //No parent
+            if (hierarchy[i][3] == -1) //No parent 
                 if (w >= 20 && h >= 20 && ar < 1.1 && ar > 0.9)
                     questionCnt.push_back(contours_poly[i]);
 
@@ -114,7 +117,7 @@ void OMR(int n)
 
         //std::cout << "\nquestionCnt " << questionCnt.size() << "\n";
 
-        //Step 4: Sort the questions/bubbles into rows.
+        //Step 4: Sort the questions/bubbles into rows. //문제정렬
 
         sort_contour(questionCnt, 0, (int)questionCnt.size(), std::string("top-to-bottom"));
 
@@ -152,9 +155,18 @@ void OMR(int n)
 
         int correct = 0;
         int currentQuestion = 0;
+        int id = 0;
 
         while (itStandardAnswer != standardAnswer.end())
         {
+            if (itStandardAnswer == standardAnswer.begin())
+            {
+                id = itStandardAnswer->second;
+                ++currentQuestion;
+                ++itTesterAnswer;
+                ++itStandardAnswer;
+                continue;
+            }
             if (itStandardAnswer->second == itTesterAnswer->second)
             {
                 ++correct;
@@ -182,19 +194,21 @@ void OMR(int n)
 
         putText(paper, std::to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
 
-        cout << "학생" << i << "의 성적" << endl;
+        cout << "학생" << id << "의 성적" << endl;
         cout << "총 문제의 수 : " << currentQuestion << endl;
         cout << "맞은 정답의 수 : " << correct << "\n";
         cout << "점수는 " << score << "점 입니다." << "" << endl;
+        cout << "정답률은 " << score << "% 입니다." << "" << endl;
         cout << endl;
         imshow("Marked Paper", paper);
+
         waitKey();
+
         score_All.push_back(score);
         i++;
         OMR(n - 1);
     }
 }
-
 
 int main()
 {
@@ -214,8 +228,14 @@ int main()
         cout << "학생" << ++a << "의 점수는 " << *iter << "점 입니다." << endl;
     }
     average /= n;
-    cout << "평균 점수는 " << average << "점 입니다." << endl;
+    cout << "\n평균 점수는 " << average << "점 입니다." << endl;
 
+    score_All.sort(greater<double>());
+    int b = 1;
+    for (auto iter = begin(score_All); iter != end(score_All); iter++)
+    {
+        cout << b << "등  " << *iter << "점 입니다." << endl;
+    }
 
     return 0;
 }
