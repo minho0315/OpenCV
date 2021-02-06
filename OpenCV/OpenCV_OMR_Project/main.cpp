@@ -41,9 +41,9 @@ void OMR(int n)
 		exit(1);
 	}
 
-	cvtColor(image, gray, COLOR_BGR2GRAY);
-	GaussianBlur(gray, blurred, Size(5, 5), 0);
-	Canny(blurred, edge, 75, 200);
+	cvtColor(image, gray, COLOR_BGR2GRAY); //gray
+	GaussianBlur(gray, blurred, Size(5, 5), 0); //흐리게
+	Canny(blurred, edge, 75, 200); //경계선
 
 	Mat paper, warped, thresh;
 	vector<vector<Point> > contours;
@@ -51,14 +51,14 @@ void OMR(int n)
 	vector<Point> approxCurve, docCnt;
 
 	/// Find contours
-	findContours(edge, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-	sort(contours.begin(), contours.end(), compareContourAreas);
+	findContours(edge, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0)); //외곽선추출
+	sort(contours.begin(), contours.end(), compareContourAreas); //정렬
 
 	//Find document countour
 	for (const auto& element : contours)
 	{
-		double perimeter = arcLength(element, true);
-		approxPolyDP(element, approxCurve, 0.05 * perimeter, true);
+		double perimeter = arcLength(element, true); //둘레 폐곡선
+		approxPolyDP(element, approxCurve, 0.05 * perimeter, true); //근사선
 
 		if (approxCurve.size() == 4)
 		{
@@ -69,13 +69,13 @@ void OMR(int n)
 
 	//Step 2: Apply a perspective transform to extract the top-down, birds-eye-view of the exam
 
-	four_point_transform(image, paper, docCnt);
+	four_point_transform(image, paper, docCnt); //원근변환
 	four_point_transform(gray, warped, docCnt);
 
 	//Step 3: Extract the sets of bubbles (questionCnt)
 
-	threshold(warped, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
-	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	threshold(warped, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU); //이진화
+	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0)); 
 
 	vector<vector<Point> > contours_poly(contours.size());
 	vector<Rect> boundRect(contours.size());
@@ -110,19 +110,20 @@ void OMR(int n)
 	{
 		int maxPixel = 0;
 		int answerKey = 0;
-		for (int j = 0; j < NoOfChoice; ++i, ++j)
+		for (int j = 0; j < NoOfChoice; ++i, ++j) // 이미지에서 흰 픽셀 수가 많은 값을 선택한다.
 		{
 			Mat mask = Mat::zeros(thresh.size(), CV_8U);
 			drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
 			bitwise_and(mask, thresh, mask);
-			if (countNonZero(mask) > maxPixel)
+			if (countNonZero(mask) > maxPixel) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
 			{
 				maxPixel = countNonZero(mask);
 				answerKey = j;
 			}
 		}
 		testerAnswer.insert(make_pair(i / NoOfChoice - 1, answerKey));
-		if (i / NoOfChoice != 1)
+
+		if (i / NoOfChoice != 1) // id값 제외
 		{
 			cout << "Question: " << i / NoOfChoice - 1 << " Tester's Answer: " << answerKey << "\n";
 		}
@@ -137,11 +138,11 @@ void OMR(int n)
 
 	int correct = 0;
 	int currentQuestion = 0;
-	int id = 0;
+	int id = 0; // id값
 
 	while (itStandardAnswer != standardAnswer.end())
 	{
-		if (itStandardAnswer == standardAnswer.begin()) //id
+		if (itStandardAnswer == standardAnswer.begin()) //id 값은 파란색으로 표시
 		{
 			drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itTesterAnswer->second, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point());
 			
@@ -169,7 +170,7 @@ void OMR(int n)
 	}
 
 	//Step 7: Display the score
-	double score = ((double)correct / (NoOfQuestion - 1) * 100);
+	double score = ((double)correct / (NoOfQuestion - 1) * 100); // id 값 제외
 
 	Scalar color;
 	if (score >= 60.0)
@@ -188,10 +189,10 @@ void OMR(int n)
 	imshow("Marked Paper", paper);
 	waitKey();
 
-	answerAll.insert(make_pair(id, score)); //id default
+	answerAll.insert(make_pair(id, score)); //id값 추가
 }
 
-bool cmp(const pair<int, int>& a, const pair<int, int>& b) {
+bool cmp(const pair<int, int>& a, const pair<int, int>& b) { //vec 정렬을 위한 함수
 	if (a.second == b.second) return a.first < b.first;
 	return a.second > b.second;
 }
@@ -224,7 +225,7 @@ int main()
 	cout << "\n합계는 " << sum << "점 입니다." << endl;
 	cout << "평균 점수는 " << average << "점 입니다." << endl;
 
-	vector<pair<int, int>> vec(answerAll.begin(), answerAll.end());
+	vector<pair<int, int>> vec(answerAll.begin(), answerAll.end()); // 정렬을 위해 벡터로 전환
 	sort(vec.begin(), vec.end(), cmp);
 
 	cout << "\n===========등수===========" << endl;
