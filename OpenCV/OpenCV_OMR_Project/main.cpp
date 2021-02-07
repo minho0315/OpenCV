@@ -12,6 +12,7 @@ using namespace cv;
 
 const int NoOfChoice = 5;
 const int NoOfQuestion = 6;
+const int NoOfStudent = 5;
 
 map<int, int> answerAll;
 
@@ -199,11 +200,7 @@ bool cmp(const pair<int, int>& a, const pair<int, int>& b) { //vec Á¤·ÄÀ» À§ÇÑ Ç
 
 int main()
 {
-	int n; // ÇÐ»ýÀÇ ¼ö (OMR Ä«µå ¼ö)
-	cout << "ÇÐ»ýÀÇ ¼ö¸¦ ÀÔ·ÂÇØÁÖ¼¼¿ä : ";
-	cin >> n;
-
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < NoOfStudent; i++)
 		OMR(i + 1);
 
 	double sum = 0;
