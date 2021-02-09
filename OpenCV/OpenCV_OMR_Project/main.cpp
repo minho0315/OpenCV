@@ -12,7 +12,7 @@ using namespace cv;
 
 const int NoOfChoice = 5;
 const int NoOfQuestion = 6;
-const int NoOfStudent = 5;
+const int NoOfStudent = 10;
 
 map<int, int> answerAll;
 
@@ -78,6 +78,8 @@ void OMR(int n)
 	threshold(warped, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU); //이진화
 	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0)); 
 
+	//imshow("thresh", thresh);
+
 	vector<vector<Point> > contours_poly(contours.size());
 	vector<Rect> boundRect(contours.size());
 	vector<vector<Point>> questionCnt;
@@ -111,22 +113,42 @@ void OMR(int n)
 	{
 		int maxPixel = 0;
 		int answerKey = 0;
-		for (int j = 0; j < NoOfChoice; ++i, ++j) // 이미지에서 흰 픽셀 수가 많은 값을 선택한다.
+
+		if (i == 0) //id값 인식
 		{
-			Mat mask = Mat::zeros(thresh.size(), CV_8U);
-			drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
-			bitwise_and(mask, thresh, mask);
-			if (countNonZero(mask) > maxPixel) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
+			for (int j = 0; j < NoOfChoice; ++i, ++j) // 이미지에서 흰 픽셀 수가 많은 값을 선택한다.
 			{
-				maxPixel = countNonZero(mask);
-				answerKey = j;
+				Mat mask = Mat::zeros(thresh.size(), CV_8U);
+				drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
+				bitwise_and(mask, thresh, mask);
+
+				if (countNonZero(mask) > 500) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
+				{
+					drawContours(paper, questionCnt, j, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point()); //인식한 원 파란색으로 표시
+					answerKey += pow(2,4-j); // 2진수 값 합계
+				}
 			}
 		}
+		else { //문제 계산
+			for (int j = 0; j < NoOfChoice; ++i, ++j) // 이미지에서 흰 픽셀 수가 많은 값을 선택한다.
+			{
+				Mat mask = Mat::zeros(thresh.size(), CV_8U);
+				drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
+				bitwise_and(mask, thresh, mask);
+
+				if (countNonZero(mask) > maxPixel) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
+				{
+					maxPixel = countNonZero(mask);
+					answerKey = j;
+				}
+			}
+		}
+
 		testerAnswer.insert(make_pair(i / NoOfChoice - 1, answerKey));
 
 		if (i / NoOfChoice != 1) // id값 제외
 		{
-			cout << "Question: " << i / NoOfChoice - 1 << " Tester's Answer: " << answerKey << "\n";
+			cout << "Question: " << i / NoOfChoice - 1 << " Tester's Answer: " << answerKey + 1 << "\n";
 		}
 	}
 
@@ -143,11 +165,10 @@ void OMR(int n)
 
 	while (itStandardAnswer != standardAnswer.end())
 	{
-		if (itStandardAnswer == standardAnswer.begin()) //id 값은 파란색으로 표시
+		if (itStandardAnswer == standardAnswer.begin())
 		{
-			drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itTesterAnswer->second, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point());
-			
-			id = itTesterAnswer->second + 1;
+			//drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itTesterAnswer->second, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point());
+			id = itTesterAnswer->second;
 			++currentQuestion;
 			++itTesterAnswer;
 			++itStandardAnswer;
@@ -181,7 +202,8 @@ void OMR(int n)
 
 	putText(paper, to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
 
-	cout << "학생" << id << "의 성적" << endl;
+	//cout << "학생" << id << "의 성적" << endl;
+	printf("학생%2d의 성적\n", id);
 	cout << "총 문제의 수 : " << currentQuestion - 1 << endl;
 	cout << "맞은 정답의 수 : " << correct << endl;
 	cout << "점수는 " << score << "점 입니다." << "" << endl;
@@ -212,7 +234,8 @@ int main()
 
 	while (itAnswerAll != answerAll.end())
 	{
-		cout << "학생" << itAnswerAll->first << "의 점수는 " << itAnswerAll->second << "점 입니다." << endl;
+		//cout << "학생" << itAnswerAll->first << "의 점수는 " << itAnswerAll->second << "점 입니다." << endl;
+		printf("학생%2d의 점수는 %2d점 입니다.\n", itAnswerAll->first, itAnswerAll->second);
 		sum += itAnswerAll->second;
 		++itAnswerAll;
 	}
@@ -228,7 +251,9 @@ int main()
 	cout << "\n===========등수===========" << endl;
 
 	for (auto num : vec) {
-		cout  <<  "학생" << num.first << " " << num.second << "점" <<  endl;
+		//cout  <<  "학생" << num.first << " " << num.second << "점" <<  endl;
+		printf("학생%2d %2d점 입니다.\n", num.first, num.second);
+
 	}
 
 	return 0;
