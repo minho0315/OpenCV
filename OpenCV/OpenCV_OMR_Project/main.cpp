@@ -77,7 +77,7 @@ void OMR(int n)
 	//Step 3: Extract the sets of bubbles (questionCnt)
 
 	threshold(warped, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU); //이진화
-	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0)); 
+	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 	//imshow("thresh", thresh);
 
@@ -126,7 +126,7 @@ void OMR(int n)
 				if (countNonZero(mask) > 500) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
 				{
 					drawContours(paper, questionCnt, j, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point()); //인식한 원 파란색으로 표시
-					answerKey += pow(2,4-j); // 2진수 값 합계
+					answerKey += pow(2, 4 - j); // 2진수 값 합계
 				}
 			}
 		}
@@ -317,10 +317,10 @@ int main()
 	Mat studentNumbers = paper(Range(0, paper.rows), Range(0, paper.cols / 2));
 	Mat questions = warped(Range(0, warped.rows), Range(warped.cols / 2, warped.cols));
 	Mat questionss = paper(Range(0, paper.rows), Range(paper.cols / 2, paper.cols));
-	
+
 	// 이미지 합치기
-	Mat sumImg;	
-	hconcat(studentNumber, questions, sumImg);
+	/*Mat sumImg;
+	hconcat(studentNumber, questions, sumImg);*/
 
 	//imshow("image", image);
 	//imshow("gray", gray);
@@ -334,13 +334,119 @@ int main()
 
 	//Step 3: Extract the sets of bubbles (questionCnt)
 
-	threshold(questions, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU); //이진화
+	//threshold(questions, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU); //이진화
+	//findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+	////imshow("thresh", thresh);
+	////imshow("warped", warped);
+
+	//vector<vector<Point> > contours_poly(contours.size()); 
+	//vector<Rect> boundRect(contours.size());
+	//vector<vector<Point>> questionCnt;
+
+	////Find document countour
+	//for (int i = 0; i < contours.size(); i++) //원검출
+	//{
+	//	approxPolyDP(Mat(contours[i]), contours_poly[i], 0.1, true);
+	//	int w = boundingRect(Mat(contours[i])).width;
+	//	int h = boundingRect(Mat(contours[i])).height;
+	//	double ar = (double)w / h;
+
+	//	if (hierarchy[i][3] == -1) //No parent 
+	//		if (w >= 13 && h >= 13 && ar < 1.2 && ar > 0.8) {
+	//			questionCnt.push_back(contours_poly[i]);
+	//		}
+
+
+	//}
+
+	//sort_contour(questionCnt, 0, (int)questionCnt.size(), string("top-to-bottom"));
+
+	//for (int i = 0; i < (int)questionCnt.size(); i = i + NoOfChoice)
+	//{
+	//	sort_contour(questionCnt, i, i + NoOfChoice, string("left-to-right"));
+	//}
+
+	////Step 5: Determine the marked answer
+	//for (int i = 0; i < questionCnt.size();)
+	//{
+	//	int maxPixel = 0;
+	//	int answerKey = 0;
+
+	//	
+	//	for (int j = 0; j < NoOfChoice; ++i, ++j) // 이미지에서 흰 픽셀 수가 많은 값을 선택한다.
+	//	{
+	//		Mat mask = Mat::zeros(thresh.size(), CV_8U);
+	//		drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
+	//		bitwise_and(mask, thresh, mask);
+
+	//		if (countNonZero(mask) > maxPixel) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
+	//		{
+	//			maxPixel = countNonZero(mask);
+	//			answerKey = j;
+	//		}
+	//	}
+
+	//	testerAnswer1.insert(make_pair(i / NoOfChoice - 1, answerKey));
+	//	cout << "Question: " << i / NoOfChoice  << " Tester's Answer: " << answerKey + 1 << "\n";
+	//}
+
+	////Step 6: Lookup the correct answer in our answer key to determine if the user was correct in their choice.
+	//map<int, int>::const_iterator itStandardAnswer;
+	//map<int, int>::const_iterator itTesterAnswer;
+
+	//itStandardAnswer = standardAnswer1.begin();
+	//itTesterAnswer = testerAnswer1.begin();
+
+	//int correct = 0;
+	//int currentQuestion = 0;
+
+	//while (itStandardAnswer != standardAnswer1.end())
+	//{
+	//	if (itStandardAnswer->second == itTesterAnswer->second)
+	//	{
+	//		++correct;
+	//		//Circle in GREEN
+	//		drawContours(questionss, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 255, 0), 2, 8, hierarchy, 0, Point());
+	//	}
+	//	else //Circle in RED
+	//	{
+	//		drawContours(questionss, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 0, 255), 2, 8, hierarchy, 0, Point());
+	//	}
+
+	//	++currentQuestion;
+	//	++itTesterAnswer;
+	//	++itStandardAnswer;
+	//}
+
+	////Step 7: Display the score
+	//double score = ((double)correct / (NoOfQuestion - 1) * 100); // id 값 제외
+
+	//Scalar color;
+	//if (score >= 60.0)
+	//	color = Scalar(0, 255, 0);
+	//else
+	//	color = Scalar(0, 0, 255);
+
+	//putText(questionss, to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
+
+	//cout << "학생" << "의 성적" << endl;
+	//cout << "총 문제의 수 : " << currentQuestion - 1 << endl;
+	//cout << "맞은 정답의 수 : " << correct << endl;
+	//cout << "점수는 " << score << "점 입니다." << "" << endl;
+	//cout << endl;
+
+	//imshow("Marked questionss", questionss);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	threshold(studentNumber, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU); //이진화
 	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 	//imshow("thresh", thresh);
 	//imshow("warped", warped);
 
-	vector<vector<Point> > contours_poly(contours.size()); 
+	vector<vector<Point> > contours_poly(contours.size());
 	vector<Rect> boundRect(contours.size());
 	vector<vector<Point>> questionCnt;
 
@@ -356,94 +462,49 @@ int main()
 			if (w >= 13 && h >= 13 && ar < 1.2 && ar > 0.8) {
 				questionCnt.push_back(contours_poly[i]);
 			}
-
-
 	}
 
 	sort_contour(questionCnt, 0, (int)questionCnt.size(), string("top-to-bottom"));
 
-	for (int i = 0; i < (int)questionCnt.size(); i = i + NoOfChoice)
+	for (int i = 0; i < (int)questionCnt.size(); i = i + StudentNumber)
 	{
-		sort_contour(questionCnt, i, i + 5, string("left-to-right"));
+		sort_contour(questionCnt, i, i + StudentNumber, string("left-to-right"));
 	}
-
+	int num = 0;
+	int id = 0;
 	//Step 5: Determine the marked answer
 	for (int i = 0; i < questionCnt.size();)
 	{
-		int maxPixel = 0;
+		
 		int answerKey = 0;
 
-		
-		for (int j = 0; j < NoOfChoice; ++i, ++j) // 이미지에서 흰 픽셀 수가 많은 값을 선택한다.
+		for (int j = 0; j < StudentNumber; ++i, ++j) // 이미지에서 흰 픽셀 수가 많은 값을 선택한다.
 		{
 			Mat mask = Mat::zeros(thresh.size(), CV_8U);
 			drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
 			bitwise_and(mask, thresh, mask);
 
-			if (countNonZero(mask) > maxPixel) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
+			if (countNonZero(mask) > 160) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
 			{
-				maxPixel = countNonZero(mask);
-				answerKey = j;
+				answerKey += num * pow(10, 8-j);
+				drawContours(studentNumbers, questionCnt, i, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point()); //인식한 원 파란색으로 표시
 			}
 		}
-
-		testerAnswer1.insert(make_pair(i / NoOfChoice - 1, answerKey));
-		cout << "Question: " << i / NoOfChoice  << " Tester's Answer: " << answerKey + 1 << "\n";
+		id += answerKey;
+		num++;
 	}
 
-	//Step 6: Lookup the correct answer in our answer key to determine if the user was correct in their choice.
-	map<int, int>::const_iterator itStandardAnswer;
-	map<int, int>::const_iterator itTesterAnswer;
+	cout << id << endl;
 
-	itStandardAnswer = standardAnswer1.begin();
-	itTesterAnswer = testerAnswer1.begin();
+	//Mat sumImgs;
+	//hconcat(studentNumbers, questionss, sumImgs);
+	//imshow("Marked sumImgs", sumImgs);
 
-	int correct = 0;
-	int currentQuestion = 0;
-
-	while (itStandardAnswer != standardAnswer1.end())
-	{
-		if (itStandardAnswer->second == itTesterAnswer->second)
-		{
-			++correct;
-			//Circle in GREEN
-			drawContours(questionss, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 255, 0), 2, 8, hierarchy, 0, Point());
-		}
-		else //Circle in RED
-		{
-			drawContours(questionss, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 0, 255), 2, 8, hierarchy, 0, Point());
-		}
-
-		++currentQuestion;
-		++itTesterAnswer;
-		++itStandardAnswer;
-	}
-
-	//Step 7: Display the score
-	double score = ((double)correct / (NoOfQuestion - 1) * 100); // id 값 제외
-
-	Scalar color;
-	if (score >= 60.0)
-		color = Scalar(0, 255, 0);
-	else
-		color = Scalar(0, 0, 255);
-
-	putText(questionss, to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
-
-	cout << "학생" << "의 성적" << endl;
-	cout << "총 문제의 수 : " << currentQuestion - 1 << endl;
-	cout << "맞은 정답의 수 : " << correct << endl;
-	cout << "점수는 " << score << "점 입니다." << "" << endl;
-	cout << endl;
-
-	imshow("Marked questionss", questionss);
-
-
-	Mat sumImgs;
-	hconcat(studentNumbers, questionss, sumImgs);
-	imshow("Marked sumImgs", sumImgs);
-
+	imshow("studentNumbers", studentNumbers);
+	//imshow("studentNumber", studentNumber);
 
 	waitKey();
 	return 0;
 }
+
+void StNum()
