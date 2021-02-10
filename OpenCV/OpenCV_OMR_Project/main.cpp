@@ -168,6 +168,7 @@ void OMR(int n)
 		if (itStandardAnswer == standardAnswer.begin())
 		{
 			//drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itTesterAnswer->second, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point());
+
 			id = itTesterAnswer->second;
 			++currentQuestion;
 			++itTesterAnswer;
@@ -222,39 +223,126 @@ bool cmp(const pair<int, int>& a, const pair<int, int>& b) { //vec Á¤·ÄÀ» À§ÇÑ Ç
 
 int main()
 {
-	for (int i = 0; i < NoOfStudent; i++)
-		OMR(i + 1);
+	//for (int i = 0; i < NoOfStudent; i++)
+	//	OMR(i + 1);
 
-	double sum = 0;
-	double average = 0;
-	map<int, int>::const_iterator itAnswerAll;
-	itAnswerAll = answerAll.begin();
+	//double sum = 0;
+	//double average = 0;
+	//map<int, int>::const_iterator itAnswerAll;
+	//itAnswerAll = answerAll.begin();
 
-	cout << "===========ÃÑÇÕ============" << endl;
+	//cout << "===========ÃÑÇÕ============" << endl;
 
-	while (itAnswerAll != answerAll.end())
+	//while (itAnswerAll != answerAll.end())
+	//{
+	//	//cout << "ÇÐ»ý" << itAnswerAll->first << "ÀÇ Á¡¼ö´Â " << itAnswerAll->second << "Á¡ ÀÔ´Ï´Ù." << endl;
+	//	printf("ÇÐ»ý%2dÀÇ Á¡¼ö´Â %2dÁ¡ ÀÔ´Ï´Ù.\n", itAnswerAll->first, itAnswerAll->second);
+	//	sum += itAnswerAll->second;
+	//	++itAnswerAll;
+	//}
+
+	//average = sum / answerAll.size();
+
+	//cout << "\nÇÕ°è´Â " << sum << "Á¡ ÀÔ´Ï´Ù." << endl;
+	//cout << "Æò±Õ Á¡¼ö´Â " << average << "Á¡ ÀÔ´Ï´Ù." << endl;
+
+	//vector<pair<int, int>> vec(answerAll.begin(), answerAll.end()); // Á¤·ÄÀ» À§ÇØ º¤ÅÍ·Î ÀüÈ¯
+	//sort(vec.begin(), vec.end(), cmp);
+
+	//cout << "\n===========µî¼ö===========" << endl;
+
+	//for (auto num : vec) {
+	//	//cout  <<  "ÇÐ»ý" << num.first << " " << num.second << "Á¡" <<  endl;
+	//	printf("ÇÐ»ý%2d %2dÁ¡ ÀÔ´Ï´Ù.\n", num.first, num.second);
+
+	//}
+	Mat image, gray, blurred, edge;
+	string filename = "omrTest/omr_test_3.png";
+
+	image = imread(filename, IMREAD_COLOR);
+
+	if (image.empty())
 	{
-		//cout << "ÇÐ»ý" << itAnswerAll->first << "ÀÇ Á¡¼ö´Â " << itAnswerAll->second << "Á¡ ÀÔ´Ï´Ù." << endl;
-		printf("ÇÐ»ý%2dÀÇ Á¡¼ö´Â %2dÁ¡ ÀÔ´Ï´Ù.\n", itAnswerAll->first, itAnswerAll->second);
-		sum += itAnswerAll->second;
-		++itAnswerAll;
+		cout << "Failed to read file\n";
+		exit(1);
 	}
 
-	average = sum / answerAll.size();
+	cvtColor(image, gray, COLOR_BGR2GRAY); //gray
+	GaussianBlur(gray, blurred, Size(5, 5), 0); //Èå¸®°Ô
+	Canny(blurred, edge, 75, 200); //°æ°è¼±
 
-	cout << "\nÇÕ°è´Â " << sum << "Á¡ ÀÔ´Ï´Ù." << endl;
-	cout << "Æò±Õ Á¡¼ö´Â " << average << "Á¡ ÀÔ´Ï´Ù." << endl;
+	Mat paper, warped, thresh;
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	vector<Point> approxCurve, docCnt;
 
-	vector<pair<int, int>> vec(answerAll.begin(), answerAll.end()); // Á¤·ÄÀ» À§ÇØ º¤ÅÍ·Î ÀüÈ¯
-	sort(vec.begin(), vec.end(), cmp);
+	/// Find contours
+	findContours(edge, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0)); //¿Ü°û¼±ÃßÃâ
+	sort(contours.begin(), contours.end(), compareContourAreas); //Á¤·Ä
 
-	cout << "\n===========µî¼ö===========" << endl;
+	//Find document countour
+	for (const auto& element : contours)
+	{
+		double perimeter = arcLength(element, true); //µÑ·¹ Æó°î¼±
+		approxPolyDP(element, approxCurve, 0.05 * perimeter, true); //±Ù»ç¼±
 
-	for (auto num : vec) {
-		//cout  <<  "ÇÐ»ý" << num.first << " " << num.second << "Á¡" <<  endl;
-		printf("ÇÐ»ý%2d %2dÁ¡ ÀÔ´Ï´Ù.\n", num.first, num.second);
-
+		if (approxCurve.size() == 4)
+		{
+			docCnt = approxCurve;
+			break;
+		}
 	}
+
+	//Step 2: Apply a perspective transform to extract the top-down, birds-eye-view of the exam
+
+	four_point_transform(image, paper, docCnt); //¿ø±Ùº¯È¯
+	four_point_transform(gray, warped, docCnt);
+
+	// °ü½É¿µ¿ª ÀÚ¸£±â
+	Mat studentNumber = warped(Range(0, warped.rows), Range(0, warped.cols / 2));
+	Mat questions = warped(Range(0, warped.rows), Range(warped.cols / 2, warped.cols));
+	
+	// ÀÌ¹ÌÁö ÇÕÄ¡±â
+	Mat sumImg;	
+	hconcat(studentNumber, questions, sumImg);
+
+	//imshow("image", image);
+	//imshow("gray", gray);
+	//imshow("blurred", blurred);
+	imshow("edge", edge);
+	//imshow("paper", paper);
+	//imshow("warped", warped);
+	//imshow("studentNumber", studentNumber);
+	//imshow("questions", questions);
+	//imshow("sumImg", sumImg);
+
+	//Step 3: Extract the sets of bubbles (questionCnt)
+
+	threshold(warped, thresh, 127, 255, CV_THRESH_BINARY_INV ); //ÀÌÁøÈ­
+	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+	imshow("thresh", thresh);
+	imshow("warped", warped);
+	//vector<vector<Point> > contours_poly(contours.size());
+	//vector<Rect> boundRect(contours.size());
+	//vector<vector<Point>> questionCnt;
+
+	////Find document countour
+	//for (int i = 0; i < contours.size(); i++) //¿ø°ËÃâ
+	//{
+	//	approxPolyDP(Mat(contours[i]), contours_poly[i], 0.1, true);
+	//	int w = boundingRect(Mat(contours[i])).width;
+	//	int h = boundingRect(Mat(contours[i])).height;
+	//	double ar = (double)w / h;
+
+	//	if (hierarchy[i][3] == -1) //No parent 
+	//		if (w >= 10 && h >= 10 && ar < 1.1 && ar > 0.9)
+	//			questionCnt.push_back(contours_poly[i]);
+
+
+	//}
+
+	waitKey();
 
 	return 0;
 }
