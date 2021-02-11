@@ -187,8 +187,7 @@ void OMR()
         {
             //drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itTesterAnswer->second, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point());
 
-            id = itTesterAnswer->second; // id값을 여기에 부여하는건데, 원 인식을 하나하나 하게끔 어떻게 하는지 고민해서 코딩하기!
-
+            id = itTesterAnswer->second;
             ++currentQuestion;
             ++itTesterAnswer;
             ++itStandardAnswer;
