@@ -28,7 +28,7 @@ void OMR()
     Mat image, gray, blurred, edge;
 
     // 이미지파일을 상황에 맞게 불러오기 (string.append , to_string() 사용)
-    string filename = "omr2/omr_test_";
+    string filename = "omr3/omr_test_";
     filename.append(to_string(i));
     filename.append(".png");
 
@@ -82,6 +82,8 @@ void OMR()
     four_point_transform(gray, warped, docCnt);
 
 
+
+
     //Step 3: Extract the sets of bubbles (questionCnt)
     threshold(warped, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU); // 이진화
     //imshow("thresh", thresh);
@@ -125,17 +127,36 @@ void OMR()
     {
         int maxPixel = 0;
         int answerKey = 0;
-        for (int j = 0; j < NoOfChoice; ++i, ++j)
-        {
-            Mat mask = Mat::zeros(thresh.size(), CV_8U);
-            drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
-            bitwise_and(mask, thresh, mask);
-            if (countNonZero(mask) > maxPixel)
-            {
-                maxPixel = countNonZero(mask); // 행렬 mask에서 0 이 아닌 요소의 개수를 반환함.
-                answerKey = j;
-            }
 
+        if (i == 0) // id값 인식
+        {
+            for (int j = 0; j < NoOfChoice; ++i, ++j) // 이미지에서 흰 픽셀 수가 많은 값을 선택한다.
+            {
+                Mat mask = Mat::zeros(thresh.size(), CV_8U);
+                drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
+                bitwise_and(mask, thresh, mask);
+
+                if (countNonZero(mask) > 500) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
+                {
+                    drawContours(paper, questionCnt, j, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point()); //인식한 원 파란색으로 표시
+                    answerKey += pow(2, 4 - j); // 2진수 값 합계
+                }
+            }
+        }
+
+        else { // 문제 계산
+            for (int j = 0; j < NoOfChoice; ++i, ++j)
+            {
+                Mat mask = Mat::zeros(thresh.size(), CV_8U);
+                drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
+                bitwise_and(mask, thresh, mask);
+                if (countNonZero(mask) > maxPixel)
+                {
+                    maxPixel = countNonZero(mask); // 행렬 mask에서 0 이 아닌 요소의 개수를 반환함.
+                    answerKey = j; // answerKey : 테스터말고, 진짜 정답
+                }
+
+            }
         }
 
 
@@ -164,9 +185,10 @@ void OMR()
     {
         if (itStandardAnswer == standardAnswer.begin()) //id 값은 파란색으로 표시
         {
-            drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itTesterAnswer->second, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point());
+            //drawContours(paper, questionCnt, (currentQuestion * NoOfChoice) + itTesterAnswer->second, Scalar(255, 0, 0), 2, 8, hierarchy, 0, Point());
 
-            id = itTesterAnswer->second + 1;
+            id = itTesterAnswer->second; // id값을 여기에 부여하는건데, 원 인식을 하나하나 하게끔 어떻게 하는지 고민해서 코딩하기!
+
             ++currentQuestion;
             ++itTesterAnswer;
             ++itStandardAnswer;
@@ -201,8 +223,8 @@ void OMR()
 
     putText(paper, to_string((int)score) + "%", Point(20, 30), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
 
-    cout << "학생" << i << "의 성적" << endl;
-    cout << "총 문제의 수 : " << currentQuestion << endl;
+    cout << "학생" << id << "의 성적" << endl;
+    cout << "총 문제의 수 : " << currentQuestion-1 << endl;
     cout << "맞은 정답의 수 : " << correct << "\n";
     cout << "점수는 " << score << "점 입니다." << "" << endl;
     cout << endl;
@@ -213,9 +235,9 @@ void OMR()
 
 }
 
-    bool cmp(const pair<int, int>&a, const pair<int, int>&b) { //vec 정렬을 위한 함수
-        if (a.second == b.second) return a.first < b.first;
-        return a.second > b.second;
+bool cmp(const pair<int, int>& a, const pair<int, int>& b) { //vec 정렬을 위한 함수
+    if (a.second == b.second) return a.first < b.first;
+    return a.second > b.second;
 }
 
 
@@ -251,7 +273,7 @@ int main()
     cout << "\n합계는 " << sum << "점 입니다." << endl;
     cout << "평균 점수는 " << average << "점 입니다." << endl;
 
-    vector<pair<int, int>> vec(answerAll.begin(), answerAll.end()); // 정렬을 위해 벡터로 전환
+    vector<pair<int, int>> vec(answerAll.begin(), answerAll.end()); // 등수 정렬을 위해 벡터로 전환
     sort(vec.begin(), vec.end(), cmp);
 
     cout << "\n===========등수===========" << endl;

@@ -1,4 +1,5 @@
 ﻿  main.cpp
+C:\Users\고탱\source\repos\OpenCV\OMR_ProJect\OMR_ProJect\main.cpp(142,47): warning C4244: '+=': 'double'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29333\include\utility(246,1): warning C4244: '초기화 중': '_Ty'에서 '_Ty2'(으)로 변환하면서 데이터가 손실될 수 있습니다.
           with
           [
@@ -70,12 +71,12 @@ C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.2
               _Pr=std::less<int>,
               _Alloc=std::allocator<std::pair<const int,int>>
           ]
-C:\Users\고탱\source\repos\OpenCV\OMR_ProJect\OMR_ProJect\main.cpp(211): message : 컴파일되는 함수 템플릿 인스턴스화 'std::pair<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const int,int>>>>,bool> std::map<int,int,std::less<int>,std::allocator<std::pair<const int,int>>>::insert<std::pair<int,double>,0>(_Valty &&)'에 대한 참조를 확인하세요.
+C:\Users\고탱\source\repos\OpenCV\OMR_ProJect\OMR_ProJect\main.cpp(233): message : 컴파일되는 함수 템플릿 인스턴스화 'std::pair<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const int,int>>>>,bool> std::map<int,int,std::less<int>,std::allocator<std::pair<const int,int>>>::insert<std::pair<int,double>,0>(_Valty &&)'에 대한 참조를 확인하세요.
           with
           [
               _Valty=std::pair<int,double>
           ]
-C:\Users\고탱\source\repos\OpenCV\OMR_ProJect\OMR_ProJect\main.cpp(211): message : 컴파일되는 함수 템플릿 인스턴스화 'std::pair<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const int,int>>>>,bool> std::map<int,int,std::less<int>,std::allocator<std::pair<const int,int>>>::insert<std::pair<int,double>,0>(_Valty &&)'에 대한 참조를 확인하세요.
+C:\Users\고탱\source\repos\OpenCV\OMR_ProJect\OMR_ProJect\main.cpp(233): message : 컴파일되는 함수 템플릿 인스턴스화 'std::pair<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const int,int>>>>,bool> std::map<int,int,std::less<int>,std::allocator<std::pair<const int,int>>>::insert<std::pair<int,double>,0>(_Valty &&)'에 대한 참조를 확인하세요.
           with
           [
               _Valty=std::pair<int,double>
