@@ -9,15 +9,93 @@
 #include <iostream>
 #include <fstream>
 
+#include <stdio.h>
+#include <io.h>
+#include <conio.h>
+
 using namespace std;
 using namespace cv;
 
 const int NoOfChoice = 5;
 const int NoOfQuestion = 20;
 const int StudentNumber = 9;
-const int NoOfStudent = 10;
+const int NoOfStudent = 5;
+
+map<int, double> Total;
+
+vector<string> get_files_inDirectory(const string& _path, const string& _filter); //디렉터리에서 파일이름 가져오기
+void omrScanner(string& fileName);
+bool cmp(const pair<int, int>& a, const pair<int, int>& b);
 
 int main()
+{
+	vector<string> imgName = get_files_inDirectory("omrs\\", "*.png");
+	for (auto i = imgName.begin(); i != imgName.end(); ++i)
+	{
+		string name = "omrs/" + *i;
+		omrScanner(name);
+	}
+
+	double sum = 0;
+	double average = 0;
+	cout << "===========총합============" << endl;
+
+	ofstream resultList("resultList.txt"); //txt파일로 저장
+	
+	map<int, double>::iterator iter;
+	for (iter = Total.begin(); iter != Total.end(); iter++)
+	{
+		cout << "학번 : " << iter->first << " 점수 : " << iter->second << endl;
+		sum += iter->second;
+
+		resultList << "학번 : " << iter->first << " 점수 : " << iter->second << endl;
+	}
+	resultList.close();
+
+	average = sum / Total.size();
+
+	cout << "\n합계는 " << sum << "점 입니다." << endl;
+	cout << "평균 점수는 " << average << "점 입니다." << endl;
+
+	vector<pair<int, double>> vec(Total.begin(), Total.end()); // 정렬을 위해 벡터로 전환
+	sort(vec.begin(), vec.end(), cmp);
+
+	cout << "\n===========등수===========" << endl;
+
+	for (auto num : vec) {
+		cout << num.first << "   " << num.second << endl;
+		//cout  <<  "학생" << num.first << " " << num.second << "점" <<  endl;
+		//printf("학생%2d %2d점 입니다.\n", num.first, num.second);
+
+	}
+
+	return 0;
+}
+
+vector<string> get_files_inDirectory(const string& _path, const string& _filter)
+{
+	string searching = _path + _filter;
+
+	vector<string> return_;
+
+	_finddata_t fd;
+	intptr_t handle = _findfirst(searching.c_str(), &fd);  //현재 폴더 내 모든 파일을 찾는다.
+
+	if (handle == -1)    return return_;
+
+	int result = 0;
+	do
+	{
+		return_.push_back(fd.name);
+		result = _findnext(handle, &fd);
+	} while (result != -1);
+
+	_findclose(handle);
+
+	return return_;
+}
+
+void omrScanner(string& fileName)
 {
 	map<int, int> standardAnswer1;
 	map<int, int> testerAnswer1;
@@ -45,9 +123,8 @@ int main()
 
 
 	Mat image, gray, blurred, edge;
-	string filename = "omrTest/omr_test_10.png";
 
-	image = imread(filename, IMREAD_COLOR);
+	image = imread(fileName, IMREAD_COLOR);
 
 	if (image.empty())
 	{
@@ -149,15 +226,15 @@ int main()
 		num++;
 	}
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	//Step 3: Extract the sets of bubbles (questionCnt)
+		//Step 3: Extract the sets of bubbles (questionCnt)
 
 	threshold(questions, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU); //이진화
 	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 
-	vector<vector<Point> > contours_poly(contours.size()); 
+	vector<vector<Point> > contours_poly(contours.size());
 	vector<Rect> boundRect(contours.size());
 	vector<vector<Point>> questionCnt;
 
@@ -190,7 +267,7 @@ int main()
 		int maxPixel = 0;
 		int answerKey = 0;
 
-		
+
 		for (int j = 0; j < NoOfChoice; ++i, ++j) // 이미지에서 흰 픽셀 수가 많은 값을 선택한다.
 		{
 			Mat mask = Mat::zeros(thresh.size(), CV_8U);
@@ -247,17 +324,14 @@ int main()
 
 	putText(questionss, to_string((int)score) + "%", Point(20, 60), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
 
-	cout << "학생" << "의 성적" << endl;
+	//cout << "학생" << "의 성적" << endl;
 	cout << "학번 : " << id << endl;
 	cout << "총 문제의 수 : " << currentQuestion << endl;
 	cout << "맞은 정답의 수 : " << correct << endl;
 	cout << "점수 : " << score << endl;
 	cout << endl;
 
-	// text파일로 정리
-	ofstream out("result/result.txt",ios_base::app); //누적 저장
-	out << id << " " << score << endl;
-	out.close();
+	Total.insert(make_pair(id,score));
 
 	Mat sumImgs;
 	hconcat(studentNumbers, questionss, sumImgs);
@@ -267,5 +341,9 @@ int main()
 	imshow("Marked sumImgs", sumImgs);
 	waitKey();
 
-	return 0;
+}
+
+bool cmp(const pair<int, int>& a, const pair<int, int>& b) { //vec 정렬을 위한 함수
+	if (a.second == b.second) return a.first < b.first;
+	return a.second > b.second;
 }
