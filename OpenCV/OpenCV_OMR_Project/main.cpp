@@ -19,57 +19,33 @@ using namespace cv;
 const int NoOfChoice = 5;
 const int NoOfQuestion = 20;
 const int StudentNumber = 9;
-const int NoOfStudent = 5;
+const int QuestionPixel = 160;
 
 map<int, double> Total;
 
+void findFileNames();
 vector<string> get_files_inDirectory(const string& _path, const string& _filter); //디렉터리에서 파일이름 가져오기
 void omrScanner(string& fileName);
 bool cmp(const pair<int, int>& a, const pair<int, int>& b);
+void arrange();
 
 int main()
 {
-	vector<string> imgName = get_files_inDirectory("omrs\\", "*.png");
-	for (auto i = imgName.begin(); i != imgName.end(); ++i)
-	{
-		string name = "omrs/" + *i;
-		omrScanner(name);
-	}
-
-	double sum = 0;
-	double average = 0;
-	cout << "===========총합============" << endl;
-
-	ofstream resultList("resultList.txt"); //txt파일로 저장
-	
-	map<int, double>::iterator iter;
-	for (iter = Total.begin(); iter != Total.end(); iter++)
-	{
-		cout << "학번 : " << iter->first << " 점수 : " << iter->second << endl;
-		sum += iter->second;
-
-		resultList << "학번 : " << iter->first << " 점수 : " << iter->second << endl;
-	}
-	resultList.close();
-
-	average = sum / Total.size();
-
-	cout << "\n합계는 " << sum << "점 입니다." << endl;
-	cout << "평균 점수는 " << average << "점 입니다." << endl;
-
-	vector<pair<int, double>> vec(Total.begin(), Total.end()); // 정렬을 위해 벡터로 전환
-	sort(vec.begin(), vec.end(), cmp);
-
-	cout << "\n===========등수===========" << endl;
-
-	for (auto num : vec) {
-		cout << num.first << "   " << num.second << endl;
-		//cout  <<  "학생" << num.first << " " << num.second << "점" <<  endl;
-		//printf("학생%2d %2d점 입니다.\n", num.first, num.second);
-
-	}
+	findFileNames();
+	arrange();
 
 	return 0;
+}
+
+void findFileNames()
+{
+	vector<string> imgNames = get_files_inDirectory("omrs\\", "*.png");
+
+	for (auto i = imgNames.begin(); i != imgNames.end(); ++i)
+	{
+		string imgName = "omrs/" + *i;
+		omrScanner(imgName);
+	}
 }
 
 vector<string> get_files_inDirectory(const string& _path, const string& _filter)
@@ -81,7 +57,11 @@ vector<string> get_files_inDirectory(const string& _path, const string& _filter)
 	_finddata_t fd;
 	intptr_t handle = _findfirst(searching.c_str(), &fd);  //현재 폴더 내 모든 파일을 찾는다.
 
-	if (handle == -1)    return return_;
+	if (handle == -1) 
+	{
+		cout << "Failed to read file" << endl;
+		return return_;
+	}
 
 	int result = 0;
 	do
@@ -163,12 +143,17 @@ void omrScanner(string& fileName)
 	four_point_transform(image, paper, docCnt); //원근변환
 	four_point_transform(gray, warped, docCnt);
 
+	//imshow("paper", paper);
+
+
 	// 관심영역 자르기
 	Mat studentNumber = warped(Range(0, warped.rows), Range(0, warped.cols / 2));
 	Mat studentNumbers = paper(Range(0, paper.rows), Range(0, paper.cols / 2));
 	Mat questions = warped(Range(0, warped.rows), Range(warped.cols / 2, warped.cols));
 	Mat questionss = paper(Range(0, paper.rows), Range(paper.cols / 2, paper.cols));
 
+
+	///////////////////////////////////////// 학번 인식 //////////////////////////////////////////////////////
 	Mat threshs;
 	vector<vector<Point> > contourss;
 	vector<Vec4i> hierarchys;
@@ -210,15 +195,16 @@ void omrScanner(string& fileName)
 
 		int answerKey = 0;
 
+
 		for (int j = 0; j < StudentNumber; ++i, ++j) // 이미지에서 흰 픽셀 수가 많은 값을 선택한다.
 		{
 			Mat mask = Mat::zeros(threshs.size(), CV_8U);
 			drawContours(mask, questionCnts, i, 255, CV_FILLED, 8, hierarchys, 0, Point());
 			bitwise_and(mask, threshs, mask);
-
+			int a = countNonZero(mask);
 			if (countNonZero(mask) > 160) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
 			{
-				answerKey += num * pow(10, 8 - j);
+				answerKey += num * (int)pow(10, 8 - j);
 				drawContours(studentNumbers, questionCnts, i, Scalar(255, 0, 0), 2, 8, hierarchys, 0, Point()); //인식한 원 파란색으로 표시
 			}
 		}
@@ -226,7 +212,7 @@ void omrScanner(string& fileName)
 		num++;
 	}
 
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////문제 인식//////////////////////////////////////////////////////////////
 
 		//Step 3: Extract the sets of bubbles (questionCnt)
 
@@ -261,6 +247,8 @@ void omrScanner(string& fileName)
 		sort_contour(questionCnt, i, i + NoOfChoice, string("left-to-right"));
 	}
 
+	list<int> emptyAnswer; //예외처리 : omr 체크를 안했을 때
+
 	//Step 5: Determine the marked answer
 	for (int i = 0; i < questionCnt.size();)
 	{
@@ -273,12 +261,17 @@ void omrScanner(string& fileName)
 			Mat mask = Mat::zeros(thresh.size(), CV_8U);
 			drawContours(mask, questionCnt, i, 255, CV_FILLED, 8, hierarchy, 0, Point());
 			bitwise_and(mask, thresh, mask);
-
 			if (countNonZero(mask) > maxPixel) // 배열 행렬 에서 0(검은색)이 아닌 픽셀의 수를 반환
 			{
 				maxPixel = countNonZero(mask);
 				answerKey = j;
 			}
+		}
+
+		if (maxPixel < 160)  // 선택 안했을 때
+		{
+			emptyAnswer.push_back(i / NoOfChoice);
+			answerKey = NoOfChoice;
 		}
 
 		testerAnswer1.insert(make_pair(i / NoOfChoice - 1, answerKey));
@@ -324,20 +317,28 @@ void omrScanner(string& fileName)
 
 	putText(questionss, to_string((int)score) + "%", Point(20, 60), FONT_HERSHEY_SIMPLEX, 0.9, color, 2);
 
-	//cout << "학생" << "의 성적" << endl;
 	cout << "학번 : " << id << endl;
 	cout << "총 문제의 수 : " << currentQuestion << endl;
 	cout << "맞은 정답의 수 : " << correct << endl;
 	cout << "점수 : " << score << endl;
+	if (emptyAnswer.size()) {
+		cout << "문제 ";
+		list<int>::iterator iter;
+		for (iter = emptyAnswer.begin(); iter != emptyAnswer.end(); iter++) {
+			cout << *iter << "번 ";
+		}
+		cout << "체크 안 했습니다." << endl;
+	}
 	cout << endl;
-
 	Total.insert(make_pair(id,score));
 
 	Mat sumImgs;
 	hconcat(studentNumbers, questionss, sumImgs);
 
 	//imshow("Marked questionss", questionss);
+	//imshow("Marked questions", questions);
 	//imshow("studentNumbers", studentNumbers);
+	//imshow("studentNumber", studentNumber);
 	imshow("Marked sumImgs", sumImgs);
 	waitKey();
 
@@ -346,4 +347,44 @@ void omrScanner(string& fileName)
 bool cmp(const pair<int, int>& a, const pair<int, int>& b) { //vec 정렬을 위한 함수
 	if (a.second == b.second) return a.first < b.first;
 	return a.second > b.second;
+}
+
+void arrange()
+{
+	double sum = 0;
+	double average = 0;
+	cout << "===========총합============" << endl;
+
+	ofstream resultList("resultList.txt"); //txt파일로 저장
+
+	map<int, double>::iterator iter;
+	for (iter = Total.begin(); iter != Total.end(); iter++)
+	{
+		cout << "학번 : " << iter->first << " 점수 : " << iter->second << endl;
+		sum += iter->second;
+
+		resultList << "학번 : " << iter->first << " 점수 : " << iter->second << endl;
+	}
+
+	average = sum / Total.size();
+
+	cout << "\n합계는 " << sum << "점 입니다." << endl;
+	cout << "평균 점수는 " << average << "점 입니다." << endl;
+
+	resultList << "\n합계는 " << sum << "점 입니다." << endl;
+	resultList << "평균 점수는 " << average << "점 입니다." << endl;
+
+	vector<pair<int, double>> vec(Total.begin(), Total.end()); // 정렬을 위해 벡터로 전환
+	sort(vec.begin(), vec.end(), cmp);
+
+	cout << "\n===========등수===========" << endl;
+	resultList << "\n===========등수===========" << endl;
+
+	for (auto num : vec) {
+		cout << num.first << "   " << num.second << endl;
+		//cout  <<  "학생" << num.first << " " << num.second << "점" <<  endl;
+		//printf("학생%2d %2d점 입니다.\n", num.first, num.second);
+		resultList << num.first << "   " << num.second << endl;
+	}
+	resultList.close();
 }
