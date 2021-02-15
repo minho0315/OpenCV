@@ -19,25 +19,15 @@ using namespace cv;
 const int NoOfChoice = 5;
 const int NoOfQuestion = 20;
 const int StudentNumber = 9;
-const int QuestionPixel = 160;
 
 map<int, double> Total;
 
-void findFileNames();
 vector<string> get_files_inDirectory(const string& _path, const string& _filter); //디렉터리에서 파일이름 가져오기
-void omrScanner(string& fileName);
+void omrScanner(string& fileName); 
 bool cmp(const pair<int, int>& a, const pair<int, int>& b);
 void arrange();
 
 int main()
-{
-	findFileNames();
-	arrange();
-
-	return 0;
-}
-
-void findFileNames()
 {
 	vector<string> imgNames = get_files_inDirectory("omrs\\", "*.png");
 
@@ -46,7 +36,11 @@ void findFileNames()
 		string imgName = "omrs/" + *i;
 		omrScanner(imgName);
 	}
+	arrange();
+
+	return 0;
 }
+
 
 vector<string> get_files_inDirectory(const string& _path, const string& _filter)
 {
@@ -143,8 +137,9 @@ void omrScanner(string& fileName)
 	four_point_transform(image, paper, docCnt); //원근변환
 	four_point_transform(gray, warped, docCnt);
 
-	//imshow("paper", paper);
-
+	resize(paper, paper, Size(591, 838)); //사이즈 고정
+	resize(warped, warped, Size(591, 838)); 
+	
 
 	// 관심영역 자르기
 	Mat studentNumber = warped(Range(0, warped.rows), Range(0, warped.cols / 2));
@@ -213,8 +208,6 @@ void omrScanner(string& fileName)
 	}
 
 	////////////////////////////////////////////////문제 인식//////////////////////////////////////////////////////////////
-
-		//Step 3: Extract the sets of bubbles (questionCnt)
 
 	threshold(questions, thresh, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU); //이진화
 	findContours(thresh, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
@@ -306,7 +299,8 @@ void omrScanner(string& fileName)
 		++itStandardAnswer;
 	}
 
-	//Step 7: Display the score
+////////////////////////////////////////정리/////////////////////////////////////////////////////////////////
+
 	double score = ((double)correct / NoOfQuestion * 100); // id 값 제외
 
 	Scalar color;
@@ -340,7 +334,7 @@ void omrScanner(string& fileName)
 	//imshow("studentNumbers", studentNumbers);
 	//imshow("studentNumber", studentNumber);
 	imshow("Marked sumImgs", sumImgs);
-	waitKey();
+	//waitKey();
 
 }
 
@@ -353,9 +347,12 @@ void arrange()
 {
 	double sum = 0;
 	double average = 0;
-	cout << "===========총합============" << endl;
+	int stn = 0;
 
 	ofstream resultList("resultList.txt"); //txt파일로 저장
+
+	cout << "===========총합============" << endl;
+	resultList << "===========총합============" << endl;
 
 	map<int, double>::iterator iter;
 	for (iter = Total.begin(); iter != Total.end(); iter++)
@@ -368,17 +365,19 @@ void arrange()
 
 	average = sum / Total.size();
 
-	cout << "\n합계는 " << sum << "점 입니다." << endl;
+	cout << "\n학생수는 " << Total.size() << " 입니다." << endl;
+	cout << "합계는 " << sum << "점 입니다." << endl;
 	cout << "평균 점수는 " << average << "점 입니다." << endl;
 
+	resultList << "학생수는 " << Total.size() << endl;
 	resultList << "\n합계는 " << sum << "점 입니다." << endl;
 	resultList << "평균 점수는 " << average << "점 입니다." << endl;
 
 	vector<pair<int, double>> vec(Total.begin(), Total.end()); // 정렬을 위해 벡터로 전환
 	sort(vec.begin(), vec.end(), cmp);
 
-	cout << "\n===========등수===========" << endl;
-	resultList << "\n===========등수===========" << endl;
+	cout << "\n===========성적순===========" << endl;
+	resultList << "\n===========성적순===========" << endl;
 
 	for (auto num : vec) {
 		cout << num.first << "   " << num.second << endl;
