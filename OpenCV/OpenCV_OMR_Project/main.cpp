@@ -13,6 +13,8 @@
 #include <io.h>
 #include <conio.h>
 
+#include "tinyxml.h"
+
 using namespace std;
 using namespace cv;
 
@@ -25,18 +27,20 @@ map<int, double> Total;
 vector<string> get_files_inDirectory(const string& _path, const string& _filter); //µð·ºÅÍ¸®¿¡¼­ ÆÄÀÏÀÌ¸§ °¡Á®¿À±â
 void omrScanner(string& fileName); 
 bool cmp(const pair<int, int>& a, const pair<int, int>& b);
-void arrange();
+void arrange(string directoryName);
 
 int main()
 {
-	vector<string> imgNames = get_files_inDirectory("omrs\\", "*.png");
+	string directoryName = "omrs";
+	vector<string> imgNames = get_files_inDirectory(directoryName +"\\", "*.png");
 
 	for (auto i = imgNames.begin(); i != imgNames.end(); ++i)
 	{
-		string imgName = "omrs/" + *i;
+		string imgName = directoryName +"/" + *i;
 		omrScanner(imgName);
 	}
-	arrange();
+
+	arrange(directoryName);
 
 	return 0;
 }
@@ -343,7 +347,7 @@ bool cmp(const pair<int, int>& a, const pair<int, int>& b) { //vec Á¤·ÄÀ» À§ÇÑ Ç
 	return a.second > b.second;
 }
 
-void arrange()
+void arrange(string directoryName)
 {
 	double sum = 0;
 	double average = 0;
@@ -365,11 +369,11 @@ void arrange()
 
 	average = sum / Total.size();
 
-	cout << "\nÇÐ»ý¼ö´Â " << Total.size() << " ÀÔ´Ï´Ù." << endl;
+	cout << "\nÇÐ»ý¼ö´Â " << Total.size() << "¸í ÀÔ´Ï´Ù." << endl;
 	cout << "ÇÕ°è´Â " << sum << "Á¡ ÀÔ´Ï´Ù." << endl;
 	cout << "Æò±Õ Á¡¼ö´Â " << average << "Á¡ ÀÔ´Ï´Ù." << endl;
 
-	resultList << "ÇÐ»ý¼ö´Â " << Total.size() << endl;
+	resultList << "ÇÐ»ý¼ö´Â " << Total.size() << "¸í ÀÔ´Ï´Ù." << endl;
 	resultList << "\nÇÕ°è´Â " << sum << "Á¡ ÀÔ´Ï´Ù." << endl;
 	resultList << "Æò±Õ Á¡¼ö´Â " << average << "Á¡ ÀÔ´Ï´Ù." << endl;
 
@@ -386,4 +390,35 @@ void arrange()
 		resultList << num.first << "   " << num.second << endl;
 	}
 	resultList.close();
+
+	//xml ¼±¾ð
+	TiXmlDocument doc;
+	TiXmlDeclaration* pDec1 = new TiXmlDeclaration("1.0", "", "");
+	doc.LinkEndChild(pDec1);
+
+	//·çÆ® ³ëµå Ãß°¡
+	TiXmlElement* pRoot = new TiXmlElement("OMR");
+	doc.LinkEndChild(pRoot);
+
+	//ÁÖ¼® ¹®Àå Ãß°¡
+	TiXmlComment* pComment = new TiXmlComment();
+	pComment->SetValue("Directory name");
+	pRoot->LinkEndChild(pComment);
+
+
+	const char* dNP = directoryName.c_str();
+	// ÇÏÀ§³ëµå ¹× µ¥ÀÌÅÍ Ãß°¡
+	TiXmlElement* pElem = new TiXmlElement(dNP);
+	pRoot->LinkEndChild(pElem);
+
+	TiXmlElement* pSubElem;
+	for (iter = Total.begin(); iter != Total.end(); iter++)
+	{
+		pSubElem = new TiXmlElement("student");
+		pElem->LinkEndChild(pSubElem);
+		pSubElem->SetAttribute("studentID", iter->first);
+		pSubElem->SetAttribute("score", iter->second);
+	}
+
+	doc.SaveFile("resultList.xml");
 }
