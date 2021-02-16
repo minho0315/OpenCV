@@ -21,22 +21,92 @@ using namespace cv;
 const int NoOfChoice = 5;
 const int NoOfQuestion = 20;
 const int StudentNumber = 9;
+map<int, int> standardAnswer1;
 
 map<int, double> Total;
 
 vector<string> get_files_inDirectory(const string& _path, const string& _filter); //디렉터리에서 파일이름 가져오기
-void omrScanner(string& fileName); 
+void omrScanner(string& fileName);
 bool cmp(const pair<int, int>& a, const pair<int, int>& b);
 void arrange(string directoryName);
 
 int main()
 {
-	string directoryName = "omrs";
-	vector<string> imgNames = get_files_inDirectory(directoryName +"\\", "*.png");
+	string directoryName = "omr5";
+	string selectMode = "m";
+	int count = 0;
+
+	while (1) {
+		cout << "모드 선택하세요(관리자모드 : m, 사용자모드: u) : ";
+		cin >> selectMode;
+
+		if (selectMode == "m") {
+			count++;
+			cout << "정답을 입력하세요!!(20문제)" << endl;
+			for (int i = 0; i < NoOfQuestion; i++) {
+				int answer = 0;
+				cout << i + 1 << "번 " << "정답을 입력하세요(1~5) : ";
+				cin >> answer;
+				while (1) {
+					if (answer < 1 || answer > 5) {
+						cout << i + 1 << "번 " << "정답을 다시 입력하세요 : ";
+						cin >> answer;
+					}
+					else {
+						standardAnswer1.insert(make_pair(i, answer - 1));
+						break;
+					}
+				}
+			}
+
+			while (1) {
+				cout << "directory를 선택하세요(omr5, omr10, omr15, omr20) : ";
+				cin >> directoryName;
+				if (directoryName == "omr5" || directoryName == "omr10" || directoryName == "omr15" || directoryName == "omr20") {
+					break;
+				}
+				else {
+					cout << "omr5, omr10, omr15, omr20 중에 하나만 선택하세요!!!" << endl;
+					continue;
+				}
+
+			}
+		}
+		else if (selectMode == "u") {
+			if (count == 0) {
+				standardAnswer1.insert(make_pair(0, 0)); //Question 1: answer: A
+				standardAnswer1.insert(make_pair(1, 1)); //Question 2: answer: B
+				standardAnswer1.insert(make_pair(2, 3)); //Question 3: answer: D
+				standardAnswer1.insert(make_pair(3, 0)); //Question 4: answer: A
+				standardAnswer1.insert(make_pair(4, 2)); //Question 5: answer: C
+				standardAnswer1.insert(make_pair(5, 1)); //Question 6: answer: B
+				standardAnswer1.insert(make_pair(6, 0)); //Question 7: answer: A
+				standardAnswer1.insert(make_pair(7, 1)); //Question 8: answer: B
+				standardAnswer1.insert(make_pair(8, 2)); //Question 9: answer: C
+				standardAnswer1.insert(make_pair(9, 3)); //Question 10: answer: D
+				standardAnswer1.insert(make_pair(10, 1)); //Question 11: answer: B
+				standardAnswer1.insert(make_pair(11, 3)); //Question 12: answer: D
+				standardAnswer1.insert(make_pair(12, 2)); //Question 13: answer: C
+				standardAnswer1.insert(make_pair(13, 2)); //Question 14: answer: C
+				standardAnswer1.insert(make_pair(14, 1)); //Question 15: answer: B
+				standardAnswer1.insert(make_pair(15, 0)); //Question 16: answer: A
+				standardAnswer1.insert(make_pair(16, 1)); //Question 17: answer: B
+				standardAnswer1.insert(make_pair(17, 3)); //Question 18: answer: D
+				standardAnswer1.insert(make_pair(18, 0)); //Question 19: answer: A
+				standardAnswer1.insert(make_pair(19, 1)); //Question 20: answer: B
+			}
+			break;
+		}
+		else {
+			cout << "관리자모드 m 사용자모드 u 중에 하나만 선택하세요!!! 제발" << endl;
+		}
+	}
+
+	vector<string> imgNames = get_files_inDirectory(directoryName + "\\", "*.png");
 
 	for (auto i = imgNames.begin(); i != imgNames.end(); ++i)
 	{
-		string imgName = directoryName +"/" + *i;
+		string imgName = directoryName + "/" + *i;
 		omrScanner(imgName);
 	}
 
@@ -55,7 +125,7 @@ vector<string> get_files_inDirectory(const string& _path, const string& _filter)
 	_finddata_t fd;
 	intptr_t handle = _findfirst(searching.c_str(), &fd);  //현재 폴더 내 모든 파일을 찾는다.
 
-	if (handle == -1) 
+	if (handle == -1)
 	{
 		cout << "Failed to read file" << endl;
 		return return_;
@@ -75,30 +145,8 @@ vector<string> get_files_inDirectory(const string& _path, const string& _filter)
 
 void omrScanner(string& fileName)
 {
-	map<int, int> standardAnswer1;
+
 	map<int, int> testerAnswer1;
-
-	standardAnswer1.insert(make_pair(0, 0)); //Question 1: answer: A
-	standardAnswer1.insert(make_pair(1, 1)); //Question 2: answer: B
-	standardAnswer1.insert(make_pair(2, 3)); //Question 3: answer: D
-	standardAnswer1.insert(make_pair(3, 0)); //Question 4: answer: A
-	standardAnswer1.insert(make_pair(4, 2)); //Question 5: answer: C
-	standardAnswer1.insert(make_pair(5, 1)); //Question 6: answer: B
-	standardAnswer1.insert(make_pair(6, 0)); //Question 7: answer: A
-	standardAnswer1.insert(make_pair(7, 1)); //Question 8: answer: B
-	standardAnswer1.insert(make_pair(8, 2)); //Question 9: answer: C
-	standardAnswer1.insert(make_pair(9, 3)); //Question 10: answer: D
-	standardAnswer1.insert(make_pair(10, 1)); //Question 11: answer: B
-	standardAnswer1.insert(make_pair(11, 3)); //Question 12: answer: D
-	standardAnswer1.insert(make_pair(12, 2)); //Question 13: answer: C
-	standardAnswer1.insert(make_pair(13, 2)); //Question 14: answer: C
-	standardAnswer1.insert(make_pair(14, 1)); //Question 15: answer: B
-	standardAnswer1.insert(make_pair(15, 0)); //Question 16: answer: A
-	standardAnswer1.insert(make_pair(16, 1)); //Question 17: answer: B
-	standardAnswer1.insert(make_pair(17, 3)); //Question 18: answer: D
-	standardAnswer1.insert(make_pair(18, 0)); //Question 19: answer: A
-	standardAnswer1.insert(make_pair(19, 1)); //Question 20: answer: B
-
 
 	Mat image, gray, blurred, edge;
 
@@ -142,8 +190,8 @@ void omrScanner(string& fileName)
 	four_point_transform(gray, warped, docCnt);
 
 	resize(paper, paper, Size(591, 838)); //사이즈 고정
-	resize(warped, warped, Size(591, 838)); 
-	
+	resize(warped, warped, Size(591, 838));
+
 
 	// 관심영역 자르기
 	Mat studentNumber = warped(Range(0, warped.rows), Range(0, warped.cols / 2));
@@ -303,7 +351,7 @@ void omrScanner(string& fileName)
 		++itStandardAnswer;
 	}
 
-////////////////////////////////////////정리/////////////////////////////////////////////////////////////////
+	////////////////////////////////////////정리/////////////////////////////////////////////////////////////////
 
 	double score = ((double)correct / NoOfQuestion * 100); // id 값 제외
 
@@ -328,7 +376,7 @@ void omrScanner(string& fileName)
 		cout << "체크 안 했습니다." << endl;
 	}
 	cout << endl;
-	Total.insert(make_pair(id,score));
+	Total.insert(make_pair(id, score));
 
 	Mat sumImgs;
 	hconcat(studentNumbers, questionss, sumImgs);
