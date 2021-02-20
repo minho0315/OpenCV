@@ -1,0 +1,3 @@
+C:\Users\고탱\source\repos\OpenCV\OMR_ProJect\x64\Debug\OMR_ProJect.pdb
+C:\Users\고탱\source\repos\OpenCV\OMR_ProJect\OMR_ProJect\x64\Debug\OMR_ProJect.exe
+C:\Users\고탱\source\repos\OpenCV\OMR_ProJect\OMR_ProJect\x64\Debug\OMR_ProJect.pdb
