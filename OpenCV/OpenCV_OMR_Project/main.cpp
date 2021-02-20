@@ -1,6 +1,9 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <algorithm>
 #include <cstdlib>
 #include <map>
@@ -21,6 +24,8 @@ using namespace cv;
 const int NoOfChoice = 5;
 const int NoOfQuestion = 20;
 const int StudentNumber = 9;
+const int recognitionValue = 100; // (100~169) ÀÎ½Ä·ü Á¶Àý°¡´É
+int correctRate[NoOfQuestion]; //¹®Á¦º° Á¤´ä·ü ÀÎ½ÄÀ» À§ÇÑ º¯¼ö
 map<int, int> standardAnswer1;
 
 map<int, double> Total;
@@ -28,12 +33,12 @@ map<int, double> Total;
 vector<string> get_files_inDirectory(const string& _path, const string& _filter); //µð·ºÅÍ¸®¿¡¼­ ÆÄÀÏÀÌ¸§ °¡Á®¿À±â
 void omrScanner(string& fileName);
 bool cmp(const pair<int, int>& a, const pair<int, int>& b);
-void arrange(string directoryName);
+void arrange(string& directoryName);
 
 int main()
 {
-	string directoryName = "omr5";
-	string selectMode = "m";
+	string directoryName = "omr"; //default°ª
+	string selectMode = "m"; //default°ª
 	int count = 0;
 
 	while (1) {
@@ -74,6 +79,7 @@ int main()
 		}
 		else if (selectMode == "u") {
 			if (count == 0) {
+				//default°ª
 				standardAnswer1.insert(make_pair(0, 0)); //Question 1: answer: A
 				standardAnswer1.insert(make_pair(1, 1)); //Question 2: answer: B
 				standardAnswer1.insert(make_pair(2, 3)); //Question 3: answer: D
@@ -109,7 +115,7 @@ int main()
 		string imgName = directoryName + "/" + *i;
 		omrScanner(imgName);
 	}
-
+	
 	arrange(directoryName);
 
 	return 0;
@@ -207,6 +213,7 @@ void omrScanner(string& fileName)
 
 	threshold(studentNumber, threshs, 127, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU); //ÀÌÁøÈ­
 	findContours(threshs, contourss, hierarchys, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	//imshow("threshs", threshs);
 
 	vector<vector<Point> > contours_polys(contourss.size());
 	vector<Rect> boundRects(contourss.size());
@@ -221,7 +228,7 @@ void omrScanner(string& fileName)
 		double ar = (double)w / h;
 
 		if (hierarchys[i][3] == -1) //No parent 
-			if (w >= 13 && h >= 13 && ar < 1.2 && ar > 0.8) {
+			if (w >= 13 && h >= 13 && ar < 1.3 && ar > 0.7) {
 				questionCnts.push_back(contours_polys[i]);
 			}
 	}
@@ -249,7 +256,7 @@ void omrScanner(string& fileName)
 			drawContours(mask, questionCnts, i, 255, CV_FILLED, 8, hierarchys, 0, Point());
 			bitwise_and(mask, threshs, mask);
 			int a = countNonZero(mask);
-			if (countNonZero(mask) > 160) // ¹è¿­ Çà·Ä ¿¡¼­ 0(°ËÀº»ö)ÀÌ ¾Æ´Ñ ÇÈ¼¿ÀÇ ¼ö¸¦ ¹ÝÈ¯
+			if (countNonZero(mask) > recognitionValue) // ¹è¿­ Çà·Ä ¿¡¼­ 0(°ËÀº»ö)ÀÌ ¾Æ´Ñ ÇÈ¼¿ÀÇ ¼ö¸¦ ¹ÝÈ¯
 			{
 				answerKey += num * (int)pow(10, 8 - j);
 				drawContours(studentNumbers, questionCnts, i, Scalar(255, 0, 0), 2, 8, hierarchys, 0, Point()); //ÀÎ½ÄÇÑ ¿ø ÆÄ¶õ»öÀ¸·Î Ç¥½Ã
@@ -278,7 +285,7 @@ void omrScanner(string& fileName)
 		double ar = (double)w / h;
 
 		if (hierarchy[i][3] == -1) //No parent 
-			if (w >= 13 && h >= 13 && ar < 1.2 && ar > 0.8) {
+			if (w >= 13 && h >= 13 && ar < 1.3 && ar > 0.7) {
 				questionCnt.push_back(contours_poly[i]);
 			}
 
@@ -313,7 +320,7 @@ void omrScanner(string& fileName)
 			}
 		}
 
-		if (maxPixel < 160)  // ¼±ÅÃ ¾ÈÇßÀ» ¶§
+		if (maxPixel < recognitionValue)  // ¿øÀÇ Å©±â(169pixel) : ÀÎ½Ä·ü Á¶Àý°¡´É
 		{
 			emptyAnswer.push_back(i / NoOfChoice);
 			answerKey = NoOfChoice;
@@ -332,11 +339,13 @@ void omrScanner(string& fileName)
 
 	int correct = 0;
 	int currentQuestion = 0;
+	int i = 0;
 
 	while (itStandardAnswer != standardAnswer1.end())
 	{
 		if (itStandardAnswer->second == itTesterAnswer->second)
 		{
+			correctRate[i]++;
 			++correct;
 			//Circle in GREEN
 			drawContours(questionss, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 255, 0), 2, 8, hierarchy, 0, Point());
@@ -345,7 +354,7 @@ void omrScanner(string& fileName)
 		{
 			drawContours(questionss, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 0, 255), 2, 8, hierarchy, 0, Point());
 		}
-
+		++i;
 		++currentQuestion;
 		++itTesterAnswer;
 		++itStandardAnswer;
@@ -367,13 +376,14 @@ void omrScanner(string& fileName)
 	cout << "ÃÑ ¹®Á¦ÀÇ ¼ö : " << currentQuestion << endl;
 	cout << "¸ÂÀº Á¤´äÀÇ ¼ö : " << correct << endl;
 	cout << "Á¡¼ö : " << score << endl;
+	cout << "ÀÎ½Ä·ü : " << (double)(NoOfQuestion - emptyAnswer.size()) / NoOfQuestion * 100 << "%" << endl;
 	if (emptyAnswer.size()) {
 		cout << "¹®Á¦ ";
 		list<int>::iterator iter;
 		for (iter = emptyAnswer.begin(); iter != emptyAnswer.end(); iter++) {
 			cout << *iter << "¹ø ";
 		}
-		cout << "Ã¼Å© ¾È Çß½À´Ï´Ù." << endl;
+		cout << "(ÃÑ " << emptyAnswer.size() << "¹®Á¦) "<< "Ã¼Å© ¾È Çß½À´Ï´Ù." << endl;
 	}
 	cout << endl;
 	Total.insert(make_pair(id, score));
@@ -381,11 +391,12 @@ void omrScanner(string& fileName)
 	Mat sumImgs;
 	hconcat(studentNumbers, questionss, sumImgs);
 
+    //imshow("edge", edge);
 	//imshow("Marked questionss", questionss);
 	//imshow("Marked questions", questions);
 	//imshow("studentNumbers", studentNumbers);
 	//imshow("studentNumber", studentNumber);
-	imshow("Marked sumImgs", sumImgs);
+	//imshow("Marked sumImgs", sumImgs);
 	//waitKey();
 
 }
@@ -395,7 +406,7 @@ bool cmp(const pair<int, int>& a, const pair<int, int>& b) { //vec Á¤·ÄÀ» À§ÇÑ Ç
 	return a.second > b.second;
 }
 
-void arrange(string directoryName)
+void arrange(string& directoryName)
 {
 	double sum = 0;
 	double average = 0;
@@ -437,6 +448,16 @@ void arrange(string directoryName)
 		//printf("ÇÐ»ý%2d %2dÁ¡ ÀÔ´Ï´Ù.\n", num.first, num.second);
 		resultList << num.first << "   " << num.second << endl;
 	}
+	
+	cout << endl;
+	resultList << endl;
+
+	for (int i = 0; i < NoOfQuestion; i++) {
+		cout << i + 1 << "¹øÂ° ¹®Á¦ÀÇ Á¤´ä·üÀº " << (double)correctRate[i] / Total.size() * 100 << "%ÀÔ´Ï´Ù." << endl;
+		resultList << i + 1 << "¹øÂ° ¹®Á¦ÀÇ Á¤´ä·üÀº " << (double)correctRate[i] / Total.size() * 100 << "%ÀÔ´Ï´Ù." << endl;
+	}
+	cout << endl;
+
 	resultList.close();
 
 	//xml ¼±¾ð
