@@ -24,7 +24,7 @@ using namespace cv;
 const int NoOfChoice = 5;
 const int NoOfQuestion = 20;
 const int StudentNumber = 9;
-const int recognitionValue = 100; // (100~169) 인식률 조절가능
+const int recognitionValue = 100; // (0~160) 인식률 조절가능
 int correctRate[NoOfQuestion]; //문제별 정답률 인식을 위한 변수
 map<int, int> standardAnswer1;
 
@@ -345,7 +345,7 @@ void omrScanner(string& fileName)
 	{
 		if (itStandardAnswer->second == itTesterAnswer->second)
 		{
-			correctRate[i]++;
+			correctRate[i]++; // 문제 맞으면 증가
 			++correct;
 			//Circle in GREEN
 			drawContours(questionss, questionCnt, (currentQuestion * NoOfChoice) + itStandardAnswer->second, Scalar(0, 255, 0), 2, 8, hierarchy, 0, Point());
@@ -396,8 +396,8 @@ void omrScanner(string& fileName)
 	//imshow("Marked questions", questions);
 	//imshow("studentNumbers", studentNumbers);
 	//imshow("studentNumber", studentNumber);
-	//imshow("Marked sumImgs", sumImgs);
-	//waitKey();
+	imshow(fileName, sumImgs); // 파일 이름
+	waitKey();
 
 }
 
